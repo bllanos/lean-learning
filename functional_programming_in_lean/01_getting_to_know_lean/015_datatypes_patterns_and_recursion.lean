@@ -109,3 +109,71 @@ def minus (n : Nat) (k : Nat) : Nat :=
 --   if n < k then
 --     0
 --   else Nat.succ (div (n - k) k)
+
+-- # Practice
+
+-- Version of `negate` that does not overflow the stack
+-- because it uses tail recursion
+def negate2Inner (n : Nat) (accumulator : Int): Int :=
+  match n with
+  | Nat.zero => accumulator
+  | Nat.succ nMinusOne => negate2Inner nMinusOne (Int.sub accumulator (1 : Int))
+def negate2 (n: Nat): Int :=
+  negate2Inner n 0
+
+#eval negate2 9
+#eval negate2 (2 ^ 15)
+
+-- Evaluation of Fibonacci numbers
+--
+-- Based on an example from:
+--   Category Theory for Programmers, by Bartosz Milewski,
+--   compiled and edited by Igal Tabachnik
+--   (https://github.com/hmemcpy/milewski-ctfp-pdf/releases)
+inductive NatF (α : Type) where
+  | ZeroF
+  | SuccF (a : α)
+-- Imitating `newtype Fix f = Fix (f (Fix f))`
+-- The following fails to show termination
+-- def NatFixedPoint : Type := NatF (NatFixedPoint)
+inductive NatFixedPoint where
+  | ZeroNatFixedPoint
+  | SuccFixedPoint (n : NatFixedPoint)
+def unFixNat (n : NatFixedPoint) : (NatF NatFixedPoint) :=
+  match n with
+  | NatFixedPoint.ZeroNatFixedPoint => NatF.ZeroF
+  | NatFixedPoint.SuccFixedPoint nMinusOne => NatF.SuccF nMinusOne
+def fmapNatF {α : Type} {β : Type} (f : α → β) (n : NatF α) : NatF β :=
+  match n with
+  | NatF.ZeroF => NatF.ZeroF
+  | NatF.SuccF nMinusOne => NatF.SuccF (f nMinusOne)
+
+def fmapNatFixedPoint {β : Type} (zero: β) (f : β → β) (n : NatFixedPoint) : β :=
+  match n with
+  | NatFixedPoint.ZeroNatFixedPoint => zero
+  | NatFixedPoint.SuccFixedPoint nMinusOne => f (fmapNatFixedPoint zero f nMinusOne)
+
+-- The following fails to show termination
+-- def catamorphism {α : Type} (eval : (NatF α) → α) (n : NatFixedPoint) : α :=
+--   match n with
+--   | NatFixedPoint.ZeroNatFixedPoint => eval NatF.ZeroF
+--   | NatFixedPoint.SuccFixedPoint nMinusOne => eval (fmapNatF (catamorphism eval) (unFixNat nMinusOne))
+
+def evalAdapter {β : Type} (eval : NatF β → β) (x: β) : β :=
+  eval (NatF.SuccF x)
+def catamorphism {β : Type} (eval : NatF β → β) (n : NatFixedPoint) : β :=
+  fmapNatFixedPoint (eval NatF.ZeroF) (evalAdapter eval) n
+
+def fib (n : NatF (Nat × Nat)) : (Nat × Nat) :=
+  match n with
+  | NatF.ZeroF => (1, 1)
+  | NatF.SuccF (m, n) => (n, m + n)
+
+def natFixedPointEval (n : NatFixedPoint) : (Nat × Nat) :=
+  catamorphism fib n
+
+#eval natFixedPointEval NatFixedPoint.ZeroNatFixedPoint
+#eval natFixedPointEval (NatFixedPoint.SuccFixedPoint (NatFixedPoint.ZeroNatFixedPoint))
+#eval natFixedPointEval (NatFixedPoint.SuccFixedPoint (NatFixedPoint.SuccFixedPoint (NatFixedPoint.ZeroNatFixedPoint)))
+#eval natFixedPointEval (NatFixedPoint.SuccFixedPoint (NatFixedPoint.SuccFixedPoint (NatFixedPoint.SuccFixedPoint (NatFixedPoint.ZeroNatFixedPoint))))
+#eval natFixedPointEval (NatFixedPoint.SuccFixedPoint (NatFixedPoint.SuccFixedPoint (NatFixedPoint.SuccFixedPoint (NatFixedPoint.SuccFixedPoint (NatFixedPoint.ZeroNatFixedPoint)))))

@@ -60,7 +60,8 @@ def signAsNumber2 (s : Sign) : signAsNumberReturnType s :=
 
 abbrev signAsNumberReturnType2 (s : Sign) : Type :=
   match s with | Sign.pos => Nat | Sign.neg => Int
--- The type annotations above were necessary as the following does not type check
+-- The type annotations above were necessary as the following does not type check.
+-- It does type check if `signAsNumberReturnType2` is used instead of `signAsNumberReturnType`.
 -- def signAsNumber3 (s : Sign) : signAsNumberReturnType s :=
 --   match s with
 --     | Sign.pos => 1
@@ -89,6 +90,7 @@ def List2.length1 (α : Type) (list : List2 α) : Nat :=
 
 #eval List2.length1 Nat List2.nil
 #eval List2.length1 Nat (List2.cons 2 (List2.cons 1 List2.nil))
+-- Is type inference used for the first parameter?
 #eval (List2.cons 2 (List2.cons 1 List2.nil)).length1
 
 #eval List.length ["Sourdough", "bread"]
