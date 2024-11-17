@@ -246,3 +246,75 @@ inductive MyType2 (α : Type) : Type where
 -- set_option diagnostics true
 def ofSix := MyType2.ctor (-6: Int)
 #check ofSix
+
+-- # Exercises
+
+def lastEntry {α : Type} (xs : List α) : Option α :=
+  match xs with
+  | [] => none
+  | y :: ys => match ys with
+    | [] => y
+    | _ => lastEntry ys
+#eval lastEntry [3, 4, 5]
+#eval lastEntry (α := Nat) []
+#eval lastEntry [3]
+
+def List.findFirst? {α : Type} (xs : List α) (predicate : α → Bool) : Option α :=
+  match xs with
+  | [] => none
+  | y :: ys => match (predicate y) with
+    | true => y
+    | false => ys.findFirst? predicate
+#eval [3, 4, 5].findFirst? (fun a => a == 4)
+#eval [3, 4, 5].findFirst? (fun a => a == 6)
+#eval [].findFirst? (fun a => a == 4)
+
+def Prod.swap {α β : Type} (pair : α × β) : β × α :=
+  (pair.snd, pair.fst)
+#eval (3, "hello").swap
+
+inductive PetName2 : Type where
+  | Dog (a : String)
+  | Cat (a : String)
+  | Bird : (a : String) → PetName2 -- Full form of the function declaration
+#check (PetName2.Cat)
+
+def animals2 : List PetName2 :=
+  [PetName2.Dog "Spot", PetName2.Cat "Tiger", PetName2.Bird "Fifi", PetName2.Dog "Rex", PetName2.Cat "Floof"]
+
+def howManyDogs2 (pets : List PetName2) : Nat :=
+  match pets with
+  | [] => 0
+  -- Function calls have higher priority than infix operators
+  | PetName2.Dog _ :: morePets => howManyDogs2 morePets + 1
+  | _ :: morePets => howManyDogs2 morePets
+#eval howManyDogs2 animals2
+
+def List.zip2 {α β : Type} (xs : List α) (ys : List β) : List (α × β) :=
+  match xs with
+  | [] => []
+  | x :: xs => match ys with
+    | [] => []
+    | y :: ys => (x, y) :: xs.zip2 ys
+    -- | y :: ys => List.cons (x, y) (xs.zip2 ys)
+#eval [2, 3, 4].zip2 [5, 6, 7, 8]
+
+def take {α : Type} (n : Nat) (xs : List α) : List α :=
+  match xs with
+  | [] => []
+  | y :: ys => match n with
+    | Nat.zero => []
+    | Nat.succ nMinusOne => y :: take nMinusOne ys
+#eval take 3 ["bolete", "oyster"]
+#eval take 1 ["bolete", "oyster"]
+
+def distribute {α β γ : Type} (pair : α × (β ⊕ γ)) : (α × β) ⊕ (α × γ) :=
+  match pair.snd with
+  | Sum.inl b => Sum.inl (pair.fst, b)
+  | Sum.inr c => Sum.inr (pair.fst, c)
+#eval distribute ((5, Sum.inl true) : (Nat × (Bool ⊕ String)))
+
+def timesTwo {α : Type} (b : Bool × α) : α ⊕ α :=
+  match b.fst with
+  | true => Sum.inl b.snd
+  | false => Sum.inr b.snd
