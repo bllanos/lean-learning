@@ -8,3 +8,5 @@ name = "Greeting"
 [[lean_exe]]
 name = "greeting"
 root = "Main"
+# Adds about 0.6 M to the executable
+#supportInterpreter = true
