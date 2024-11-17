@@ -211,3 +211,38 @@ def howManyDogs (pets : List PetName) : Nat :=
   | [] => 0
   | Sum.inl _ :: morePets => howManyDogs morePets + 1
   | Sum.inr _ :: morePets => howManyDogs morePets
+
+inductive Unit2 : Type where
+  | unit : Unit2
+#check (Unit2.unit)
+def aUnit : Unit2 := Unit2.unit
+
+inductive ArithExpr (ann : Type) : Type where
+  | int : ann → Int → ArithExpr ann
+  | plus : ann → ArithExpr ann → ArithExpr ann → ArithExpr ann
+  | minus : ann → ArithExpr ann → ArithExpr ann → ArithExpr ann
+  | times : ann → ArithExpr ann → ArithExpr ann → ArithExpr ann
+
+#check (ArithExpr.int)
+#check (ArithExpr Unit)
+#check (ArithExpr.int ())
+
+def HalfSum (α : Type) : Type := Sum Empty α
+def halfSum5 : (HalfSum Nat) := Sum.inr 5
+-- Cannot do anything here
+-- def halfSumEmpty : (HalfSum Nat) := Sum.inl
+
+def one : Bool ⊕ Unit := Sum.inl false
+def two : Bool ⊕ Unit := Sum.inl true
+def three : Bool ⊕ Unit := Sum.inr ()
+
+inductive MyType {α : Type} : Type where
+  | ctor : α → MyType
+def ofFive := MyType.ctor 5
+#check ofFive
+inductive MyType2 (α : Type) : Type where
+  | ctor : α → MyType2 α
+#check (MyType2.ctor)
+-- set_option diagnostics true
+def ofSix := MyType2.ctor (-6: Int)
+#check ofSix
