@@ -105,8 +105,8 @@ def thirdOption (xs : List α) : Option α := xs[2]?
 theorem twoPlusThree : 2 + 3 = 5 := rfl
 theorem fifteenMinusEight : 15 - 8 = 7 := rfl
 theorem helloWorld : "Hello".append " world" = "Hello world" := rfl
--- simp made no progress
--- theorem helloWorld2 : "Hello".append " world" = "Hello world" := by simp
+-- simp made no progress until it is provided with definitions to use in the proof
+theorem helloWorld2 : "Hello".append " world" = "Hello world" := (by simp [String.append])
 theorem fiveLessThanEighteen : 5 < 18 := by simp
 #check (LT.lt)
 #check (LT.lt 5)
