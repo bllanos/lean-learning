@@ -161,7 +161,7 @@ instance : Monad Id2 where
 #eval mapM2 (m := Id) (· + 1) [1, 2, 3, 4, 5]
 #eval mapM2 (fun x => ((x + 1) : Id Nat)) [1, 2, 3, 4, 5]
 #eval mapM2 (fun x => (pure (x + 1))) [1, 2, 3, 4, 5]
-#eval mapM2 (fun x => (x : Id Nat)) ([1, 2, 3, 4, 5] : List Nat)
+#eval mapM2 (fun x => (x + 1 : Id Nat)) ([1, 2, 3, 4, 5] : List Nat)
 
 -- ## The monad contract
 
