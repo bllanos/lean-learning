@@ -19,25 +19,39 @@ def Config.dirName (cfg : Config) (dir : String) : String :=
 def Config.inDirectory (cfg : Config) : Config :=
   {cfg with currentPrefix := cfg.preDir ++ " " ++ cfg.currentPrefix }
 
-def ConfigIO (α : Type) : Type :=
-  Config → IO α
+abbrev ConfigIO (α : Type) : Type :=
+  ReaderT Config IO α
 
-instance : Monad ConfigIO where
-  pure x := fun _ => pure x
-  bind result next := fun cfg => do
-    let v ← result cfg
-    next v cfg
+-- def read [Monad m] : ReaderT ρ m ρ :=
+--   fun env => pure env
 
-def ConfigIO.run (action : ConfigIO α) (cfg : Config) : IO α :=
-  action cfg
+-- class MonadReader (ρ : outParam (Type u)) (m : Type u → Type v) : Type (max (u+1) v) where
+--   read : m ρ
 
-def currentConfig : ConfigIO Config :=
-  fun cfg => pure cfg
+-- instance [Monad m] : MonadReader ρ (ReaderT ρ m) where
+--   read := fun env => pure env
 
-def locally (change : Config → Config) (action : ConfigIO α) : ConfigIO α :=
-  fun cfg => action (change cfg)
+-- export MonadReader (read)
 
-def runIO (action : IO α) : ConfigIO α :=
-  fun _ => action
+-- instance [Monad m] : Monad (ReaderT ρ m) where
+--   pure x := fun _ => pure x
+--   bind result next := fun env => do
+--     let v ← result env
+--     next v env
+
+-- class MonadLift (m : Type u → Type v) (n : Type u → Type w) where
+--   monadLift : {α : Type u} → m α → n α
+
+-- instance : MonadLift m (ReaderT ρ m) where
+--   monadLift action := fun _ => action
+
+-- class MonadWithReader (ρ : outParam (Type u)) (m : Type u → Type v) where
+--   withReader {α : Type u} : (ρ → ρ) → m α → m α
+
+-- export MonadWithReader (withReader)
+
+-- instance : MonadWithReader ρ (ReaderT ρ m) where
+--   withReader change action :=
+--     fun cfg => action (change cfg)
 
 end Doug
