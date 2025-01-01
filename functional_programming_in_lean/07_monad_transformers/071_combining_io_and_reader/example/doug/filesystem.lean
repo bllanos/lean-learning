@@ -13,11 +13,12 @@ def toEntry (path : System.FilePath) : IO (Option Entry) := do
   | some name =>
     pure (some (if (← path.isDir) then .dir name else .file name))
 
-def showFileName (cfg : Config) (file : String) : IO Unit := do
-  IO.println (cfg.fileName file)
+def showFileName (file : String) : ConfigIO Unit := do
+  let cfg ← currentConfig
+  runIO (IO.println (cfg.fileName file))
 
-def showDirName (cfg : Config) (dir : String) : IO Unit := do
-  IO.println (cfg.dirName dir)
+def showDirName (dir : String) : ConfigIO Unit := do
+  runIO (IO.println ((← currentConfig).dirName dir))
 
 def doList [Applicative f] : List α → (α → f Unit) → f Unit
   | [], _ => pure ()
@@ -25,15 +26,14 @@ def doList [Applicative f] : List α → (α → f Unit) → f Unit
     action x *>
     doList xs action
 
-partial def dirTree (cfg : Config) (path : System.FilePath) : IO Unit := do
-  match ← toEntry path with
+partial def dirTree (path : System.FilePath) : ConfigIO Unit := do
+  match ← runIO (toEntry path) with
   | none => pure ()
-  | some (.file name) => showFileName cfg name
+  | some (.file name) => showFileName name
   | some (.dir name) =>
-    showDirName cfg name
-    let contents ← path.readDir
-    let newConfig := cfg.inDirectory
-    doList contents.toList fun d =>
-      dirTree newConfig d.path
+    showDirName name
+    let contents ← runIO (path.readDir)
+    locally Config.inDirectory (doList contents.toList fun d =>
+      dirTree d.path)
 
 end Doug
