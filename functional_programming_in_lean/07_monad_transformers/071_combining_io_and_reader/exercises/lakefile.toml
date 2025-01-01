@@ -1,0 +1,10 @@
+name = "exercises"
+version = "0.1.0"
+defaultTargets = ["doug_tree"]
+
+[[lean_lib]]
+name = "doug"
+
+[[lean_exe]]
+name = "doug_tree"
+root = "Main"
