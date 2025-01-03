@@ -6,12 +6,15 @@ inductive Entry where
   | file : String → Entry
   | dir : String → Entry
 
-def toEntry (path : System.FilePath) : IO (Option Entry) := do
+def toEntry (path : System.FilePath) : ConfigIO (Option Entry) := do
   match path.components.getLast? with
   | none => pure (some (.dir ""))
   | some "." | some ".." => pure none
   | some name =>
-    pure (some (if (← path.isDir) then .dir name else .file name))
+    if (← read).shouldShowName name then
+      pure (some (if (← path.isDir) then .dir name else .file name))
+    else
+      pure none
 
 def showFileName (file : String) : ConfigIO Unit := do
   let cfg ← read
