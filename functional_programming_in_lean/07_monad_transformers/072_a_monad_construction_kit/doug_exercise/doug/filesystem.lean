@@ -29,8 +29,23 @@ def doList [Applicative f] : List α → (α → f Unit) → f Unit
     action x *>
     doList xs action
 
-partial def dirTree (path : System.FilePath) : ConfigIO Unit := do
-  match ← toEntry path with
+structure EntryCounts where
+  files: Nat := 0
+  directories: Nat := 0
+
+def EntryCounts.report (counts: EntryCounts) : String :=
+  s!"{counts.files} files, {counts.directories} directories"
+
+def countEntry (entry: Option Entry) (counts : EntryCounts) : EntryCounts :=
+  match entry with
+  | none => counts
+  | some (.file _) => { counts with files := counts.files + 1 }
+  | some (.dir _) => { counts with directories := counts.directories + 1 }
+
+partial def dirTree (path : System.FilePath) : StateT EntryCounts ConfigIO Unit := do
+  let entry ← toEntry path
+  modify (countEntry entry)
+  match entry with
   | none => pure ()
   | some (.file name) => showFileName name
   | some (.dir name) =>
@@ -38,5 +53,9 @@ partial def dirTree (path : System.FilePath) : ConfigIO Unit := do
     let contents ← path.readDir
     withReader Config.inDirectory (doList contents.toList fun d =>
       dirTree d.path)
+
+partial def runDirTreeWithConfig (path : System.FilePath) (config : Config) : IO Unit := do
+  let results ← (dirTree path).run {} config
+  IO.println s!"Viewed {results.snd.report}"
 
 end Doug

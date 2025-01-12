@@ -10,7 +10,7 @@ def main (args : List String) : IO UInt32 := do
   | Except.ok parsedArgs =>
     let startingDirectory ← getStartingDirectory parsedArgs
     if (← startingDirectory.pathExists) then
-      (Doug.dirTree startingDirectory).run parsedArgs.config
+      Doug.runDirTreeWithConfig startingDirectory parsedArgs.config
       pure 0
     else
       IO.eprintln s!"The starting path argument \"{startingDirectory}\" does not exist."
