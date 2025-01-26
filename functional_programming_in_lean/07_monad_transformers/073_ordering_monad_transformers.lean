@@ -301,3 +301,42 @@ instance [Monad m] [MonadState σ m] : MonadState σ (WithManyT m) where
   get := MonadLift.monadLift (MonadState.get : m σ)
   set := MonadLift.monadLift ∘ (MonadState.set : σ → m PUnit)
   modifyGet {α} f := MonadLift.monadLift ((MonadState.modifyGet f) : m α)
+
+-- # Practice
+
+-- ## Implementing `MonadState` for the State monad
+
+-- Why is `modifyGet` not implemented in terms of `get` and `set`, for efficiency?
+
+def State2 (σ : Type u) (α : Type v) : Type (max u v) :=
+  σ → (α × σ)
+
+def State2.get : (State2 σ σ) := fun s => (s, s)
+
+def State2.set (s : σ) : (State2 σ PUnit) := fun _ => (PUnit.unit, s)
+
+instance : Monad (State2 σ) where
+  pure x := fun s => (x, s)
+  bind first next :=
+    fun s =>
+      let (x, s') := first s
+      next x s'
+
+instance : MonadState σ (State2 σ) where
+  get := State2.get
+  set := State2.set
+  modifyGet f := do
+    let (a, s) := f (← (State2.get))
+    State2.set s
+    pure a
+
+def expandedModifyGet {σ : Type u} {α : Type u} (f : σ → (α × σ)) : State2 σ α :=
+  bind (fun s => (s, s)) fun s => -- Returning a pair duplicates `s` (uses `s` non-linearly)
+    let (a, s') := f s
+    bind (fun _ => (PUnit.unit, s')) fun _ =>
+      fun s => (a, s)
+
+instance : MonadState σ (State2 σ) where
+  get := State2.get
+  set := State2.set
+  modifyGet f := f -- More efficient
