@@ -280,6 +280,7 @@ def StateThenMany (σ : Type u) (m : Type u → Type v) (α : Type u) : Type (ma
   σ → m ((Many α) × σ)
 
 -- WithManyT and StateT do not commute:
+--
 -- `ManyThenState` is useful if a function needs to generate a stream of states,
 -- such as if the elements of the stream depend on the state.
 -- `StateThenMany` is useful if a function needs to generate a stream
@@ -301,6 +302,29 @@ instance [Monad m] [MonadState σ m] : MonadState σ (WithManyT m) where
   get := MonadLift.monadLift (MonadState.get : m σ)
   set := MonadLift.monadLift ∘ (MonadState.set : σ → m PUnit)
   modifyGet {α} f := MonadLift.monadLift ((MonadState.modifyGet f) : m α)
+
+-- ### Sample programs
+
+abbrev V1 (σ : Type u) := StateT σ (WithManyT Id)
+abbrev V2 (σ : Type u) := WithManyT (StateT σ Id)
+
+def processTransactions [Monad m] [MonadState Int m] [MonadMany m] : m Int :=
+  -- Get a stream of transactions from some source
+  let transactions := ([(· + 1), (· + 2), (· - 5)] : List (Int → Int))
+  let stream := MonadMany.fromList transactions
+  do
+    let transaction ← stream
+    modify transaction
+    MonadState.get
+
+-- Returns a list of intermediate balances as though the transactions were
+-- executed in parallel and not in series
+#eval ((processTransactions (m := (V1 Int))) 11).takeAll
+-- Returns the final balance and a list of intermediate balances
+#eval (
+  let (stream, state) := ((processTransactions (m := (V2 Int))) 11)
+  (stream.takeAll, state)
+)
 
 -- # Practice
 
