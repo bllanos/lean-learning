@@ -245,3 +245,59 @@ instance [Monad m] [Alternative m] : Alternative (WithManyT m) where
       )
     let failover := Alternative.orElse mappedNoneToFailure next
     WithManyT.mk failover
+
+-- ### Behaviour class
+
+class MonadMany (m : Type u → Type v) where
+  fromList : {α : Type u} → List α → m α
+  -- For this to have the same signature as Many.takeAll,
+  -- `m` would need to be a comonad
+  takeAll : {α : Type u} → m α → m (List α)
+
+instance : MonadMany Many where
+  fromList := Many.fromList
+  takeAll x := Many.one x.takeAll
+
+instance [Monad m] : MonadMany (WithManyT m) where
+  fromList xs :=
+    WithManyT.mk (pure (Many.fromList xs))
+  takeAll x := do
+    let inner ← (WithManyT.run x)
+    pure inner.takeAll
+
+-- ## ManyT and StateT
+
+def WithManyT2 (m : Type u → Type v) (α : Type u) : Type v :=
+  m (Many α)
+
+def StateT3 (σ : Type u) (m : Type u → Type v) (α : Type u) : Type (max u v) :=
+  σ → m (α × σ)
+
+def ManyThenState (σ : Type u) (m : Type u → Type v) (α : Type u) : Type (max u v) :=
+  σ → m (Many (α × σ))
+
+def StateThenMany (σ : Type u) (m : Type u → Type v) (α : Type u) : Type (max u v) :=
+  σ → m ((Many α) × σ)
+
+-- WithManyT and StateT do not commute:
+-- `ManyThenState` is useful if a function needs to generate a stream of states,
+-- such as if the elements of the stream depend on the state.
+-- `StateThenMany` is useful if a function needs to generate a stream
+-- and simultaneously return state for generating another stream.
+
+-- ### Behaviour class instances
+
+instance [Monad m] [MonadMany m] : MonadMany (StateT σ m) where
+  fromList {α} xs := (MonadMany.fromList xs : m α)
+  takeAll x := fun s =>
+    let inner := x s
+    let taken := MonadMany.takeAll inner
+    -- There is no general way to combine the states from all list elements,
+    -- so use the first state, if the list is not empty,
+    -- or the original state, if the list is empty
+    (fun ys => (ys.map (fun y => y.fst), ((fun y => y.snd) <$> ys.head?).getD s)) <$> taken
+
+instance [Monad m] [MonadState σ m] : MonadState σ (WithManyT m) where
+  get := MonadLift.monadLift (MonadState.get : m σ)
+  set := MonadLift.monadLift ∘ (MonadState.set : σ → m PUnit)
+  modifyGet {α} f := MonadLift.monadLift ((MonadState.modifyGet f) : m α)
