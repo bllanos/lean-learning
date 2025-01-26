@@ -298,9 +298,9 @@ instance [Monad m] [MonadMany m] : MonadMany (StateT σ m) where
     -- or the original state, if the list is empty
     (fun ys => (ys.map (fun y => y.fst), ((fun y => y.snd) <$> ys.head?).getD s)) <$> taken
 
-instance [Monad m] [MonadState σ m] : MonadState σ (WithManyT m) where
-  get := MonadLift.monadLift (MonadState.get : m σ)
-  set := MonadLift.monadLift ∘ (MonadState.set : σ → m PUnit)
+instance [Monad m] [MonadStateOf σ m] : MonadStateOf σ (WithManyT m) where
+  get := MonadLift.monadLift (MonadStateOf.get : m σ)
+  set := MonadLift.monadLift ∘ (MonadStateOf.set : σ → m PUnit)
   modifyGet {α} f := MonadLift.monadLift ((MonadState.modifyGet f) : m α)
 
 -- ### Sample programs
@@ -346,7 +346,7 @@ instance : Monad (State2 σ) where
       let (x, s') := first s
       next x s'
 
-instance : MonadState σ (State2 σ) where
+instance : MonadStateOf σ (State2 σ) where
   get := State2.get
   set := State2.set
   modifyGet f := do
@@ -360,7 +360,7 @@ def expandedModifyGet {σ : Type u} {α : Type u} (f : σ → (α × σ)) : Stat
     bind (fun _ => (PUnit.unit, s')) fun _ =>
       fun s => (a, s)
 
-instance : MonadState σ (State2 σ) where
+instance : MonadStateOf σ (State2 σ) where
   get := State2.get
   set := State2.set
   modifyGet f := f -- More efficient
