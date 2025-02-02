@@ -17,6 +17,8 @@ We found the following resources helpful. Each one is listed alongside the date 
 
 ### Software design
 
+1. (2025) [Domain Modeling Made Functional](https://pragprog.com/titles/swdddf/domain-modeling-made-functional/), by Scott Wlaschin, version P1.0 published January 2018 by The Pragmatic Programmers (ISBN 9781680502541)
+
 ### Theory
 
 1. (2024) [Category Theory for Programmers](https://github.com/hmemcpy/milewski-ctfp-pdf/releases), by Bartosz Milewski, compiled and edited by Igal Tabachnik
