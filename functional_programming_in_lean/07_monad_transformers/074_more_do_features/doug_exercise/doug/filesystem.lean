@@ -23,12 +23,6 @@ def showFileName (file : String) : ConfigIO Unit := do
 def showDirName (dir : String) : ConfigIO Unit := do
   IO.println ((← read).dirName dir)
 
-def doList [Applicative f] : List α → (α → f Unit) → f Unit
-  | [], _ => pure ()
-  | x :: xs, action =>
-    action x *>
-    doList xs action
-
 structure EntryCounts where
   files: Nat := 0
   directories: Nat := 0
@@ -51,8 +45,10 @@ partial def dirTree (path : System.FilePath) : StateT EntryCounts ConfigIO Unit 
   | some (.dir name) =>
     showDirName name
     let contents ← path.readDir
-    withReader Config.inDirectory (doList contents.toList fun d =>
-      dirTree d.path)
+    withReader Config.inDirectory (
+        for d in contents do
+          dirTree d.path
+      )
 
 partial def runDirTreeWithConfig (path : System.FilePath) (config : Config) : IO Unit := do
   let results ← (dirTree path).run {} config

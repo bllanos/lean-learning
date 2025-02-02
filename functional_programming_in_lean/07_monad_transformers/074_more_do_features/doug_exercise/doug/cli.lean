@@ -18,25 +18,32 @@ Options:
 \t-a\tShow hidden files
 \tDIRECTORY\tStart of the filesystem hierarchy to output"
 
-def matchArg : (FoundArgs × ParsedArgs) → String → Except String (FoundArgs × ParsedArgs)
-      | (foundArgs, parsedArgs), "--ascii" =>
-        if foundArgs.useASCII then
-          Except.error s!"duplicate argument \"--ascii\""
-        else
-          Except.ok ({foundArgs with useASCII := true }, { parsedArgs with config := { parsedArgs.config with useASCII := true } })
-      | (foundArgs, parsedArgs), "-a" =>
-        if foundArgs.showHiddenFiles then
-          Except.error s!"duplicate argument \"-a\""
-        else
-          Except.ok ({foundArgs with showHiddenFiles := true }, { parsedArgs with config := { parsedArgs.config with showHiddenFiles := true } })
-      | (foundArgs, parsedArgs), arg =>
-        if foundArgs.startingDirectory then
-          Except.error s!"expected at most one non-named (i.e. positional) argument, providing the starting directory"
-        else
-          Except.ok ({foundArgs with startingDirectory := true }, { parsedArgs with startingDirectory := arg })
+def matchArg (str: String) : StateT (FoundArgs × ParsedArgs) (Except String) Unit := do
+  -- I think `modify` would be simpler than using a local mutable variable with `get` and `set`
+  let mut (foundArgs, parsedArgs) ← get
+  match str with
+  | "--ascii" =>
+    if foundArgs.useASCII then
+      throw s!"duplicate argument \"--ascii\""
+    else
+      (foundArgs, parsedArgs) := ({foundArgs with useASCII := true }, { parsedArgs with config := { parsedArgs.config with useASCII := true } })
+  | "-a" =>
+    if foundArgs.showHiddenFiles then
+      throw s!"duplicate argument \"-a\""
+    else
+      (foundArgs, parsedArgs) := ({foundArgs with showHiddenFiles := true }, { parsedArgs with config := { parsedArgs.config with showHiddenFiles := true } })
+  | arg =>
+    if foundArgs.startingDirectory then
+      throw s!"expected at most one non-named (i.e. positional) argument, providing the starting directory"
+    else
+      (foundArgs, parsedArgs) := ({foundArgs with startingDirectory := true }, { parsedArgs with startingDirectory := arg })
+  set (foundArgs, parsedArgs)
 
 -- This function will stop validation at the first invalid argument
-def parseArgs (args : List String) : Except String ParsedArgs :=
-  Prod.snd <$> (args.foldlM matchArg ({}, {}))
+def parseArgs (args : List String) : Except String ParsedArgs := do
+  let mut parserState := ({}, {})
+  for arg in args do
+    parserState := (← (matchArg arg parserState)).snd
+  return parserState.snd
 
 end Doug

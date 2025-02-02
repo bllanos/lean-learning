@@ -11,11 +11,11 @@ def main (args : List String) : IO UInt32 := do
     let startingDirectory ← getStartingDirectory parsedArgs
     if (← startingDirectory.pathExists) then
       Doug.runDirTreeWithConfig startingDirectory parsedArgs.config
-      pure 0
+      return 0
     else
       IO.eprintln s!"The starting path argument \"{startingDirectory}\" does not exist."
-      pure 1
+      return 1
   | Except.error err =>
     IO.eprintln err
     IO.eprintln Doug.usage
-    pure 1
+    return 1
