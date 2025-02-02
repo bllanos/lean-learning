@@ -269,7 +269,7 @@ def List.findFirst? {α : Type} (xs : List α) (predicate : α → Bool) : Optio
 #eval [3, 4, 5].findFirst? (fun a => a == 6)
 #eval [].findFirst? (fun a => a == 4)
 
-def Prod.swap {α β : Type} (pair : α × β) : β × α :=
+def Prod.swap2 {α β : Type} (pair : α × β) : β × α :=
   (pair.snd, pair.fst)
 #eval (3, "hello").swap
 
