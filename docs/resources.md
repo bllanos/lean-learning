@@ -22,3 +22,4 @@ We found the following resources helpful. Each one is listed alongside the date 
 ### Theory
 
 1. (2024) [Category Theory for Programmers](https://github.com/hmemcpy/milewski-ctfp-pdf/releases), by Bartosz Milewski, compiled and edited by Igal Tabachnik
+2. (2025) Philip Wadler. 2015. Propositions as types. Commun. ACM 58, 12 (December 2015), 75–84. https://doi.org/10.1145/2699407
