@@ -27,9 +27,143 @@ instance {t : DBType} : Repr t.asType where
     match t with
     | .int | .string | .bool => reprPrec
 
+structure NDBType where
+  underlying : DBType
+  nullable : Bool
+deriving BEq
+
+abbrev NDBType.asType (t : NDBType) : Type :=
+  if t.nullable then
+    Option t.underlying.asType
+  else
+    t.underlying.asType
+
+#check ({ underlying := DBType.int, nullable := false } : NDBType).asType
+#check (some (1 : Int) : ({ underlying := DBType.int, nullable := true } : NDBType).asType)
+#check ((1 : Int) : ({ underlying := DBType.int, nullable := false } : NDBType).asType)
+
+def NDBType.beq (u : DBType) (n : Bool) (x y : ({ underlying := u, nullable := n } : NDBType).asType) : Bool :=
+  match n with
+  | true =>
+    match u with
+    | .int | .string | .bool => match x, y with
+      | some x', some y' => x' == y'
+      | none, none => true
+      | _, _ => false
+  | false =>
+    let x' : u.asType := x
+    let y' : u.asType := y
+    x' == y'
+
+instance {t : NDBType} : BEq t.asType where
+  beq := NDBType.beq t.underlying t.nullable
+
+-- Conforms to SQL null propagation rules
+-- (https://www.postgresql.org/docs/current/functions-comparison.html)
+def NDBType.nullableEq {u : DBType} {n1 : Bool} {n2 : Bool}
+  (x : ({ underlying := u, nullable := n1 } : NDBType).asType) (y : ({ underlying := u, nullable := n2 } : NDBType).asType) :
+  ({ underlying := .bool, nullable := n1 || n2 } : NDBType).asType :=
+  match n1, n2 with
+  | true, true =>
+    match u with
+    | .int | .string | .bool => match x, y with
+      | some x', some y' => some (x' == y')
+      | none, none => none
+      | _, _ => none
+  | true, false =>
+    match u with
+    | .int | .string | .bool => match x, y with
+      | some x', y' => some (x' == y')
+      | none, _ => none
+  | false, true =>
+    match u with
+    | .int | .string | .bool => match x, y with
+      | x', some y' => some (y' == x') -- For some reason, `x' == y'` does not type check
+      | _, none => none
+  | false, false =>
+    let x' : u.asType := x
+    let y' : u.asType := y
+    x' == y'
+
+def NDBType.nullableLessThan {n1 : Bool} {n2 : Bool}
+  (x : ({ underlying := .int, nullable := n1 } : NDBType).asType) (y : ({ underlying := .int, nullable := n2 } : NDBType).asType) :
+  ({ underlying := .bool, nullable := n1 || n2 } : NDBType).asType :=
+  match n1, n2 with
+  | true, true =>
+    match x, y with
+    | some x', some y' => some (x' < y')
+    | none, none => none
+    | _, _ => none
+  | true, false =>
+    match x, y with
+      | some x', y' => some (x' < y')
+      | none, _ => none
+  | false, true =>
+    match x, y with
+      | x', some y' => some (y' > x') -- For some reason, `x' < y'` does not type check
+      | _, none => none
+  | false, false =>
+    let x' : Int := x
+    let y' : Int := y
+    ((x' < y') : Bool)
+
+def NDBType.nullableAnd {n1 : Bool} {n2 : Bool}
+  (x : ({ underlying := .bool, nullable := n1 } : NDBType).asType) (y : ({ underlying := .bool, nullable := n2 } : NDBType).asType) :
+  ({ underlying := .bool, nullable := n1 || n2 } : NDBType).asType :=
+  match n1, n2 with
+  | true, true =>
+    match x, y with
+    | some x', some y' => some (x' && y')
+    | none, none => none
+    | _, _ => none
+  | true, false =>
+    match x, y with
+      | some x', y' => some (x' && y')
+      | none, _ => none
+  | false, true =>
+    match x, y with
+      | x', some y' => some (x' && y')
+      | _, none => none
+  | false, false =>
+    let x' : Bool := x
+    let y' : Bool := y
+    x' && y'
+
+def NDBType.nullableNot {n : Bool}
+  (x : ({ underlying := .bool, nullable := n } : NDBType).asType) :
+  ({ underlying := .bool, nullable := n } : NDBType).asType :=
+  match n with
+  | true =>
+    match x with
+    | some x' => some (not x')
+    | none => none
+  | false =>
+    let x' : Bool := x
+    not x'
+
+def NDBType.reprPrecCustom (u : DBType) (n : Bool) (x : ({ underlying := u, nullable := n } : NDBType).asType) (prec : Nat) : Std.Format :=
+  match n with
+  | true =>
+    match u with
+    | .int | .string | .bool => match x with
+      | some x' => reprPrec x' prec
+      | none => reprPrec (none : Option u.asType) prec
+  | false =>
+    let x' : u.asType := x
+    reprPrec x' prec
+
+instance {t : NDBType} : Repr t.asType where
+  reprPrec := NDBType.reprPrecCustom t.underlying t.nullable
+
+instance : OfNat ({ underlying := DBType.int, nullable := false } : NDBType).asType n where
+  ofNat := (n : Int)
+
+instance : OfNat ({ underlying := DBType.int, nullable := true } : NDBType).asType n where
+  ofNat := some (n : Int)
+
 structure Column where
   name : String
-  contains : DBType
+  contains : NDBType
 
 abbrev Schema := List Column
 
@@ -41,28 +175,36 @@ abbrev Row : Schema → Type
 abbrev Table (s : Schema) := List (Row s)
 
 abbrev peak : Schema := [
-  ⟨"name", DBType.string⟩,
-  ⟨"location", DBType.string⟩,
-  ⟨"elevation", DBType.int⟩,
-  ⟨"lastVisited", DBType.int⟩
+  ⟨"name", ⟨DBType.string, false⟩⟩,
+  ⟨"location", ⟨DBType.string, false⟩⟩,
+  ⟨"elevation", ⟨DBType.int, false⟩⟩,
+  ⟨"lastVisited", ⟨DBType.int, true⟩⟩
 ]
+
+instance {s : String} : OfNat ({ name := s, contains := { underlying := DBType.int, nullable := false } } : Column).contains.asType n where
+  ofNat := (n : Int)
+
+instance {s : String} : OfNat ({ name := s, contains := { underlying := DBType.int, nullable := true } } : Column).contains.asType n where
+  ofNat := some (n : Int)
 
 def mountainDiary : Table peak := [
   ⟨"Mount Nebo", "USA", 3637, 2013⟩,
   ⟨"Moscow Mountain", "USA", 1519, 2015⟩,
   ⟨"Himmelbjerget", "Denmark", 147, 2004⟩,
-  ⟨"Mount St. Helens", "USA", 2549, 2010⟩
+  ⟨"Mount St. Helens", "USA", 2549, 2010⟩,
+  ⟨"Fantasy Mountain", "USA", 3000, none⟩
 ]
 
 abbrev waterfall : Schema := [
-  ⟨"name", .string⟩,
-  ⟨"location", .string⟩,
-  ⟨"lastVisited", .int⟩
+  ⟨"name", ⟨DBType.string, false⟩⟩,
+  ⟨"location", ⟨DBType.string, false⟩⟩,
+  ⟨"lastVisited", ⟨DBType.int, true⟩⟩
 ]
 
 def waterfallDiary : Table waterfall := [
   ⟨"Multnomah Falls", "USA", 2018⟩,
-  ⟨"Shoshone Falls", "USA", 2014⟩
+  ⟨"Shoshone Falls", "USA", 2014⟩,
+  ⟨"Fantasy Waterfall", "USA", none⟩
 ]
 
 def Row.beq (r1 r2 : Row s) : Bool :=
@@ -77,12 +219,15 @@ def Row.beq (r1 r2 : Row s) : Bool :=
 instance : BEq (Row s) where
   beq := Row.beq
 
-inductive HasCol : Schema → String → DBType → Type where
+inductive HasCol : Schema → String → NDBType → Type where
   | here : HasCol (⟨name, t⟩ :: _) name t
   | there : HasCol s name t → HasCol (_ :: s) name t
 
-example : HasCol peak "elevation" .int :=
+example : HasCol peak "elevation" ⟨.int, false⟩ :=
   .there (.there .here)
+
+example : HasCol peak "lastVisited" ⟨.int, true⟩ :=
+  .there (.there (.there .here))
 
 def Row.get (row : Row s) (col : HasCol s n t) : t.asType :=
   match s, col, row with
@@ -90,7 +235,8 @@ def Row.get (row : Row s) (col : HasCol s n t) : t.asType :=
   | _::_::_, .here, (v, _) => v
   | _::_::_, .there next, (_, r) => get r next
 
-#eval mountainDiary[1].get (.there (.there .here) : HasCol peak "elevation" .int)
+#eval mountainDiary[1].get (.there (.there .here) : HasCol peak "elevation" ⟨.int, false⟩)
+#eval mountainDiary[3].get (.there (.there (.there .here)) : HasCol peak "lastVisited" ⟨.int, true⟩)
 
 inductive Subschema : Schema → Schema → Type where
   | nil : Subschema [] bigger
@@ -100,26 +246,34 @@ inductive Subschema : Schema → Schema → Type where
     Subschema (⟨n, t⟩ :: smaller) bigger
 
 abbrev travelDiary : Schema :=
-  [⟨"name", .string⟩, ⟨"location", .string⟩, ⟨"lastVisited", .int⟩]
+  [⟨"name", ⟨.string, false⟩⟩, ⟨"location", ⟨.string, false⟩⟩, ⟨"lastVisited", ⟨.int, true⟩⟩]
+abbrev travelDiary2 : Schema :=
+  [⟨"name", ⟨.string, false⟩⟩, ⟨"location", ⟨.string, false⟩⟩, ⟨"lastVisited", ⟨.int, false⟩⟩]
 
 example : Subschema travelDiary peak :=
   .cons .here
     (.cons (.there .here)
       (.cons (.there (.there (.there .here))) .nil))
 
+-- This does not type check, even though it is a more accurate type of travel diary
+-- example : Subschema travelDiary2 peak :=
+--   .cons .here
+--     (.cons (.there .here)
+--       (.cons (.there (.there (.there .here))) .nil))
+
 example : Subschema [] peak := .nil
 example : Subschema [] peak := by constructor
 
-example : Subschema [⟨"location", .string⟩] peak := by
+example : Subschema [⟨"location", ⟨.string, false⟩⟩] peak := by
   constructor
   constructor
   constructor
   constructor
 
-example : Subschema [⟨"location", .string⟩] peak :=
+example : Subschema [⟨"location", ⟨.string, false⟩⟩] peak :=
   .cons (.there .here) .nil
 
-example : Subschema [⟨"location", .string⟩] peak := by repeat constructor
+example : Subschema [⟨"location", ⟨.string, false⟩⟩] peak := by repeat constructor
 
 example: Subschema travelDiary peak := by repeat constructor
 
@@ -139,29 +293,45 @@ def Row.project (row : Row s) : (s' : Schema) → Subschema s' s → Row s'
   | [_], .cons c .nil => row.get c
   | _::_::_, .cons c cs => (row.get c, row.project _ cs)
 
-inductive DBExpr (s : Schema) : DBType → Type where
+-- "Ordinary comparison operators yield null (signifying “unknown”), not true or false, when either input is null."
+-- (https://www.postgresql.org/docs/current/functions-comparison.html)
+inductive DBExpr (s : Schema) : NDBType → Type where
   | col (n : String) (loc : HasCol s n t) : DBExpr s t
-  | eq (e1 e2 : DBExpr s t) : DBExpr s .bool
-  | lt (e1 e2 : DBExpr s .int) : DBExpr s .bool
-  | and (e1 e2 : DBExpr s .bool) : DBExpr s .bool
-  | const : t.asType → DBExpr s t
+  | eq (e1 : DBExpr s { underlying := t, nullable := n1 }) (e2 : DBExpr s { underlying := t, nullable := n2 }) : DBExpr s { underlying := .bool, nullable := n1 || n2 }
+  | lt (e1 : DBExpr s { underlying := .int, nullable := n1 }) (e2 : DBExpr s { underlying := .int, nullable := n2 }) : DBExpr s { underlying := .bool, nullable := n1 || n2 }
+  | and (e1 : DBExpr s { underlying := .bool, nullable := n1 }) (e2 : DBExpr s { underlying := .bool, nullable := n2 }) : DBExpr s { underlying := .bool, nullable := n1 || n2 }
+  | const : (t : DBType).asType → DBExpr s { underlying := t, nullable := false }
+  | isNull (e : DBExpr s { underlying := u, nullable := true }) : DBExpr s { underlying := .bool, nullable := false }
+  | not (e : DBExpr s { underlying := .bool, nullable := n }) : DBExpr s { underlying := .bool, nullable := n }
 
-macro "c!" n:term : term => `(DBExpr.col $n (by repeat constructor))
+def tallInDenmark : DBExpr peak ⟨.bool, false⟩ :=
+  .and (.lt (.const 1000) (DBExpr.col "elevation" (.there (.there .here))))
+    (.eq (DBExpr.col "location" (.there .here)) ((.const "Denmark") : DBExpr peak ({ underlying := .string, nullable := false } : NDBType)))
 
-def tallInDenmark : DBExpr peak .bool :=
-  .and (.lt (.const 1000) (c! "elevation"))
-    (.eq (c! "location") (.const "Denmark"))
+def visited : DBExpr peak ⟨.bool, false⟩ :=
+  .not (.isNull (DBExpr.col "lastVisited" (.there (.there (.there .here)))))
+
+def neverVisited : DBExpr peak ⟨.bool, false⟩ :=
+  .isNull (DBExpr.col "lastVisited" (.there (.there (.there .here))))
 
 def DBExpr.evaluate (row : Row s) : DBExpr s t → t.asType
   | .col _ loc => row.get loc
-  | .eq e1 e2 => evaluate row e1 == evaluate row e2
-  | .lt e1 e2 => evaluate row e1 < evaluate row e2
-  | .and e1 e2 => evaluate row e1 && evaluate row e2
+  | .eq e1 e2 => NDBType.nullableEq (evaluate row e1) (evaluate row e2)
+  | .lt e1 e2 => NDBType.nullableLessThan (evaluate row e1) (evaluate row e2)
+  | .and e1 e2 => NDBType.nullableAnd (evaluate row e1) (evaluate row e2)
   | .const v => v
+  | isNull e => match (evaluate row e) with | some _ => false | none => true
+  | not e => NDBType.nullableNot (evaluate row e)
 
 #eval tallInDenmark.evaluate ("Valby Bakke", "Denmark", 31, 2023)
 #eval tallInDenmark.evaluate ("Fictional mountain", "Denmark", 1230, 2023)
 #eval tallInDenmark.evaluate ("Mount Borah", "USA", 3859, 1996)
+
+#eval visited.evaluate ("Valby Bakke", "Denmark", 31, 2023)
+#eval visited.evaluate ("Fictional mountain", "Denmark", 1230, none)
+
+#eval neverVisited.evaluate ("Valby Bakke", "Denmark", 31, 2023)
+#eval neverVisited.evaluate ("Fictional mountain", "Denmark", 1230, none)
 
 def disjoint [BEq α] (xs ys : List α) : Bool :=
   not (xs.any ys.contains || ys.any xs.contains)
@@ -174,7 +344,7 @@ inductive Query : Schema → Type where
   | table : Table s → Query s
   | union : Query s → Query s → Query s
   | diff : Query s → Query s → Query s
-  | select : Query s → DBExpr s .bool → Query s
+  | select : Query s → DBExpr s {underlying := .bool, nullable := false} → Query s
   | project : Query s → (s' : Schema) → Subschema s' s → Query s'
   | product :
     Query s1 → Query s2 →
@@ -233,8 +403,8 @@ def Query.exec : Query s → Table s
 open Query in
 def example1 :=
   table mountainDiary |>.select
-    (.lt (.const 500) (c! "elevation")) |>.project
-    [⟨"elevation", .int⟩] (by repeat constructor)
+    (.lt (.const 500) (DBExpr.col "elevation" (.there (.there .here)))) |>.project
+    [⟨"elevation", ⟨.int, false⟩⟩] (by repeat constructor)
 
 #eval example1.exec
 
@@ -243,7 +413,23 @@ def example2 :=
   let mountain := table mountainDiary |>.prefixWith "mountain"
   let waterfallResult := table waterfallDiary |>.prefixWith "waterfall"
   mountain.product waterfallResult (by simp [disjoint])
-    |>.select (.eq (c! "mountain.location") (c! "waterfall.location"))
-    |>.project [⟨"mountain.name", .string⟩, ⟨"waterfall.name", .string⟩] (by repeat constructor)
+    |>.select (.eq (DBExpr.col "mountain.location" (.there .here)) (DBExpr.col "waterfall.location" (.there (.there (.there (.there (.there .here)))))))
+    |>.project [⟨"mountain.name", ⟨.string, false⟩⟩, ⟨"waterfall.name", ⟨.string, false⟩⟩] (by repeat constructor)
 
 #eval example2.exec
+
+open Query in
+def example3 :=
+  table mountainDiary |>.select
+    visited |>.project
+    [⟨"name", ⟨.string, false⟩⟩] (by repeat constructor)
+
+#eval example3.exec
+
+open Query in
+def example4 :=
+  table mountainDiary |>.select
+    neverVisited |>.project
+    [⟨"name", ⟨.string, false⟩⟩] (by repeat constructor)
+
+#eval example4.exec
