@@ -1,31 +1,129 @@
 -- # Dates
 
 inductive DBType where
-  | int | string | bool
+  | int | string | bool | date
+
+abbrev isMonth (n : Nat) : Bool := n > 0 && n < 13
+
+def Month : Type := {n : Nat // (isMonth n)}
+
+instance : OfNat Month 1 where
+  ofNat := ⟨1, by simp⟩
+instance : OfNat Month 2 where
+  ofNat := ⟨2, by simp⟩
+instance : OfNat Month 3 where
+  ofNat := ⟨3, by simp⟩
+instance : OfNat Month 4 where
+  ofNat := ⟨4, by simp⟩
+instance : OfNat Month 5 where
+  ofNat := ⟨5, by simp⟩
+instance : OfNat Month 6 where
+  ofNat := ⟨6, by simp⟩
+instance : OfNat Month 7 where
+  ofNat := ⟨7, by simp⟩
+instance : OfNat Month 8 where
+  ofNat := ⟨8, by simp⟩
+instance : OfNat Month 9 where
+  ofNat := ⟨9, by simp⟩
+instance : OfNat Month 10 where
+  ofNat := ⟨10, by simp⟩
+instance : OfNat Month 11 where
+  ofNat := ⟨11, by simp⟩
+instance : OfNat Month 12 where
+  ofNat := ⟨12, by simp⟩
+
+instance : ToString Month where
+  toString month := toString (month.val)
+
+abbrev isDay (month : Month) (n : Nat) : Bool := n > 0 && (
+  match month with
+  | 1 | 3 | 5 | 7 | 8 | 10 | 12 => n < 32
+  | 4 | 6 | 9 | 11 => n < 31
+  | 2 => n < 29 -- Ignore leap years
+)
+
+def Day (month : Month) : Type := {n : Nat // (isDay month n)}
+
+instance : ToString (Day month) where
+  toString day := toString (day.val)
+
+def daysInYear : Nat := Id.run do
+  let mut sum := 0
+  for month in [1:13] do
+    if h : isMonth month then
+      for day in [1:32] do
+        if isDay ⟨month, h⟩ day then
+          sum := sum + 1
+        else
+          break
+  pure sum
+
+-- Can I prove that it is 365?
+#eval daysInYear
+
+def Year : Type := Nat
+
+structure RawDate where
+  year : Nat
+  month : Nat
+  day : Nat
+deriving BEq, Repr
+
+instance : ToString RawDate where
+  toString date := s!"{date.year}-{date.month}-{date.day}"
+
+structure Date where
+  date : RawDate
+  hMonth: isMonth date.month
+  hDay: isDay ⟨date.month, hMonth⟩ date.day
+
+def Date.year (d : Date) : Year := d.date.year
+def Date.month (d : Date) : Month := ⟨d.date.month, d.hMonth⟩
+def Date.day (d : Date) : Day d.month := ⟨d.date.day, d.hDay⟩
+
+instance : ToString Date where
+  toString date := toString date.date
+
+#eval { date := {year := 1901, month := 2, day := 28}, hMonth := (by simp), hDay := (by simp) : Date}
+
+macro "date!" n:term : term => `({ date := $n, hMonth := (by simp), hDay := (by simp) : Date })
+
+#eval date! {year := 1904, month := 3, day := 30}
+
+def Date.beq (d1 d2 : Date) : Bool :=
+  d1.date == d2.date
+
+instance : BEq Date where
+  beq := Date.beq
+
+instance : Repr Date where
+  reprPrec date := reprPrec date.date
 
 abbrev DBType.asType : DBType → Type
   | .int => Int
   | .string => String
   | .bool => Bool
+  | .date => Date
 
 #eval ("Mount Hood" : DBType.string.asType)
+#eval (date! {year := 1900, month := 12, day := 31} : DBType.date.asType)
 
 def DBType.beq (t : DBType) (x y : t.asType) : Bool :=
   match t with
-  | .int | .string | .bool => x == y
+  | .int | .string | .bool | .date => x == y
 
 instance {t : DBType} : BEq t.asType where
   beq := t.beq
 
 instance : BEq DBType where
   beq
-    | .int, .int | .string, .string | .bool, .bool => true
+    | .int, .int | .string, .string | .bool, .bool | .date, .date => true
     | _, _ => false
 
 instance {t : DBType} : Repr t.asType where
   reprPrec :=
     match t with
-    | .int | .string | .bool => reprPrec
+    | .int | .string | .bool | .date => reprPrec
 
 structure Column where
   name : String
@@ -44,25 +142,25 @@ abbrev peak : Schema := [
   ⟨"name", DBType.string⟩,
   ⟨"location", DBType.string⟩,
   ⟨"elevation", DBType.int⟩,
-  ⟨"lastVisited", DBType.int⟩
+  ⟨"lastVisited", DBType.date⟩
 ]
 
 def mountainDiary : Table peak := [
-  ⟨"Mount Nebo", "USA", 3637, 2013⟩,
-  ⟨"Moscow Mountain", "USA", 1519, 2015⟩,
-  ⟨"Himmelbjerget", "Denmark", 147, 2004⟩,
-  ⟨"Mount St. Helens", "USA", 2549, 2010⟩
+  ⟨"Mount Nebo", "USA", 3637, date! {year := 2013, month := 2, day := 5}⟩,
+  ⟨"Moscow Mountain", "USA", 1519, date! {year := 2015, month := 3, day := 15}⟩,
+  ⟨"Himmelbjerget", "Denmark", 147,  date! {year := 2004, month := 4, day := 25}⟩,
+  ⟨"Mount St. Helens", "USA", 2549, date! {year := 2010, month := 5, day := 21}⟩
 ]
 
 abbrev waterfall : Schema := [
   ⟨"name", .string⟩,
   ⟨"location", .string⟩,
-  ⟨"lastVisited", .int⟩
+  ⟨"lastVisited", .date⟩
 ]
 
 def waterfallDiary : Table waterfall := [
-  ⟨"Multnomah Falls", "USA", 2018⟩,
-  ⟨"Shoshone Falls", "USA", 2014⟩
+  ⟨"Multnomah Falls", "USA", date! {year := 2018, month := 6, day := 4}⟩,
+  ⟨"Shoshone Falls", "USA", date! {year := 2014, month := 7, day := 1}⟩
 ]
 
 def Row.beq (r1 r2 : Row s) : Bool :=
@@ -100,7 +198,7 @@ inductive Subschema : Schema → Schema → Type where
     Subschema (⟨n, t⟩ :: smaller) bigger
 
 abbrev travelDiary : Schema :=
-  [⟨"name", .string⟩, ⟨"location", .string⟩, ⟨"lastVisited", .int⟩]
+  [⟨"name", .string⟩, ⟨"location", .string⟩, ⟨"lastVisited", .date⟩]
 
 example : Subschema travelDiary peak :=
   .cons .here
@@ -143,6 +241,7 @@ inductive DBExpr (s : Schema) : DBType → Type where
   | col (n : String) (loc : HasCol s n t) : DBExpr s t
   | eq (e1 e2 : DBExpr s t) : DBExpr s .bool
   | lt (e1 e2 : DBExpr s .int) : DBExpr s .bool
+  | before (e1 e2 : DBExpr s .date) : DBExpr s .bool
   | and (e1 e2 : DBExpr s .bool) : DBExpr s .bool
   | const : t.asType → DBExpr s t
 
@@ -152,16 +251,43 @@ def tallInDenmark : DBExpr peak .bool :=
   .and (.lt (.const 1000) (c! "elevation"))
     (.eq (c! "location") (.const "Denmark"))
 
+def RawDate.lt (d1 d2 : RawDate) : Bool :=
+  if d1.year == d2.year then
+    if d1.month == d2.month then
+      d1.day < d2.day
+    else
+      d1.month < d2.month
+  else
+    d1.year < d2.year
+
+instance : LT RawDate where
+  lt d1 d2 := (RawDate.lt d1 d2)
+
+def Date.lt (d1 d2 : Date) : Bool :=
+  d1.date.lt d2.date
+
+instance : LT Date where
+  lt d1 d2 := (Date.lt d1 d2)
+
 def DBExpr.evaluate (row : Row s) : DBExpr s t → t.asType
   | .col _ loc => row.get loc
   | .eq e1 e2 => evaluate row e1 == evaluate row e2
   | .lt e1 e2 => evaluate row e1 < evaluate row e2
+  | .before e1 e2 => (evaluate row e1).lt (evaluate row e2)
   | .and e1 e2 => evaluate row e1 && evaluate row e2
   | .const v => v
 
-#eval tallInDenmark.evaluate ("Valby Bakke", "Denmark", 31, 2023)
-#eval tallInDenmark.evaluate ("Fictional mountain", "Denmark", 1230, 2023)
-#eval tallInDenmark.evaluate ("Mount Borah", "USA", 3859, 1996)
+#eval tallInDenmark.evaluate ("Valby Bakke", "Denmark", 31, date! {year := 2023, month := 8, day := 15})
+#eval tallInDenmark.evaluate ("Fictional mountain", "Denmark", 1230, date! {year := 2023, month := 9, day := 12})
+#eval tallInDenmark.evaluate ("Mount Borah", "USA", 3859, date! {year := 1996, month := 10, day := 8})
+
+#eval (date! {year := 2000, month := 2, day := 1}).lt (date! {year := 2000, month := 2, day := 3})
+
+def visitedEarlyInDenmark : DBExpr peak .bool :=
+  .and (.before (c! "lastVisited") (.const (date! {year := 2000, month := 1, day := 1})))
+    (.eq (c! "location") (.const "Denmark"))
+#eval visitedEarlyInDenmark.evaluate ("Valby Bakke", "Denmark", 31, date! {year := 2023, month := 8, day := 15})
+#eval visitedEarlyInDenmark.evaluate ("Valby Bakke", "Denmark", 31, date! {year := 1999, month := 8, day := 15})
 
 def disjoint [BEq α] (xs ys : List α) : Bool :=
   not (xs.any ys.contains || ys.any xs.contains)
@@ -247,3 +373,11 @@ def example2 :=
     |>.project [⟨"mountain.name", .string⟩, ⟨"waterfall.name", .string⟩] (by repeat constructor)
 
 #eval example2.exec
+
+open Query in
+def example3 :=
+  table mountainDiary |>.select
+    (.before (c! "lastVisited") (.const (date! {year := 2014, month := 8, day := 15})) ) |>.project
+    [⟨"elevation", .int⟩, ⟨"lastVisited", .date⟩] (.cons (.there (.there .here)) (.cons (.there (.there (.there .here))) .nil))
+
+#eval example3.exec
