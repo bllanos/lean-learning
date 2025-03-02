@@ -301,3 +301,41 @@ def example2 :=
     |>.project [⟨"mountain.name", .string⟩, ⟨"waterfall.name", .string⟩] (by repeat constructor)
 
 #eval example2.exec
+
+-- # Exercises
+
+-- ## Experimenting with tactics
+
+def aNat : Nat := by repeat constructor
+#check aNat
+#eval aNat -- 0 (First constructor found is Nat.zero)
+#eval Nat.zero -- 0
+
+#eval ((by repeat constructor) : Nat)
+
+-- The empty list is the first constructor
+#eval ((by repeat constructor) : List Nat) -- []
+
+inductive Vect (α : Type u) : Nat → Type u where
+  | nil : Vect α 0
+  | cons : α → Vect α n → Vect α (n + 1)
+
+-- Four constructor calls are required to produce a vector with length 4
+-- Vect.cons 0 (Vect.cons 0 (Vect.cons 0 (Vect.cons 0 (Vect.nil))))
+#eval ((by repeat constructor) : Vect Nat 4)
+
+-- The empty schema selects the empty row type
+#eval ((by repeat constructor) : Row []) -- ()
+
+-- A single-element schema selects a primitive type.
+-- The first constructor of `Int` is `ofNat`, and the first
+-- constructor of `Nat` is zero.
+#eval ((by repeat constructor) : Row [⟨"price", .int⟩]) -- 0
+
+-- A multi-element schema selects a tuple type.
+#eval ((by repeat constructor) : Row peak) -- ("", "", 0, 0)
+
+-- The first constructor that can match is `HasCol.here`
+#eval ((by repeat constructor) : HasCol [⟨"price", .int⟩, ⟨"price", .int⟩] "price" .int)
+-- Two constructor invocations would also match
+#eval ((.there .here) : HasCol [⟨"price", .int⟩, ⟨"price", .int⟩] "price" .int)
