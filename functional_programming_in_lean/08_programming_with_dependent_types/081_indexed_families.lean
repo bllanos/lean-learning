@@ -156,14 +156,28 @@ def Vect.reverseSlow : Vect α n → Vect α n
 #eval (Vect.fromList ([1, 2] : List Nat)).reverseSlow
 #eval (Vect.fromList ([1, 2, 3] : List Nat)).reverseSlow
 
--- I am not sure how to satisfy the type checker
--- def Vect.reversehelper (tail : Vect α n) (previous : Vect α k) : Vect α (n + k) :=
---   match tail with
---   | .nil => previous
---   | .cons x xs => reversehelper xs (.cons x previous)
+def plus_shift_one (n k : Nat) : n + (k + 1) = (n + 1) + k :=
+  match k with
+  | 0 => rfl (a := (n + 1))
+  | k' + 1 => congrArg (· + 1) (plus_shift_one n k')
 
--- def Vect.reverse (v : Vect α n) : Vect α n :=
---   reversehelper v .nil
+def Vect.reverseHelper (tail : Vect α n) (previous : Vect α k) : Vect α (k + n) :=
+  match tail with
+  | .nil => previous
+  | .cons x xs => plus_shift_one k _ ▸ ((reverseHelper xs ((.cons x previous) : Vect α (k + 1))) : Vect α (k + 1 + _))
+
+def plus_zero_n (n : Nat) : 0 + n = n :=
+  match n with
+  | 0 => rfl (a := 0)
+  | k + 1 => congrArg (· + 1) (plus_zero_n k)
+
+def Vect.reverse (v : Vect α n) : Vect α n :=
+  plus_zero_n n ▸ reverseHelper v .nil
+
+#eval (Vect.fromList ([] : List Nat)).reverse
+#eval (Vect.fromList ([1] : List Nat)).reverse
+#eval (Vect.fromList ([1, 2] : List Nat)).reverse
+#eval (Vect.fromList ([1, 2, 3] : List Nat)).reverse
 
 -- mathlib4 defines `Vect.reverse` in terms of `Vect.toList`,
 -- but mathlib4 defines `Vect` as a subtype of `List`.
@@ -175,11 +189,17 @@ def Vect.toList : Vect α n → { x : List α // x.length = n }
     let { val := result, property := h } := toList xs
     ⟨ x :: result, by simp [h] ⟩
 
--- Type mismatch error
--- def Vect.reverseViaList (v : Vect α n) : Vect α n :=
---   let { val := result, property := h } := v.toList
---   let reversed : Vect α n := Vect.fromList result.reverse
---   reversed
+def list_reverse_length (xs : List α) : xs.reverse.length = xs.length := by simp
+
+def Vect.reverseViaList (v : Vect α n) : Vect α n :=
+  let { val := result, property := h } := v.toList
+  let reversed : Vect α n := h ▸ (list_reverse_length result ▸ (Vect.fromList result.reverse))
+  reversed
+
+#eval (Vect.fromList ([] : List Nat)).reverseViaList
+#eval (Vect.fromList ([1] : List Nat)).reverseViaList
+#eval (Vect.fromList ([1, 2] : List Nat)).reverseViaList
+#eval (Vect.fromList ([1, 2, 3] : List Nat)).reverseViaList
 
 -- ## Vect.drop
 
