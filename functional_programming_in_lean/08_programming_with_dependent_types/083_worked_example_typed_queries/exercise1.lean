@@ -61,6 +61,34 @@ def daysInYear : Nat := Id.run do
 -- Can I prove that it is 365?
 #eval daysInYear
 
+-- Unsolved goal. Does this mean there are partial functions in the definition of `daysInYear`?
+-- def daysInYearIs365 : daysInYear = 365 := by simp [daysInYear]
+
+def daysInMonth (month : Month) : Nat :=
+  let rec counter : Nat → Nat
+    | 0 => 0
+    | n + 1 => if isDay month n then
+        1 + (counter n)
+      else
+        (counter n)
+  counter 32
+
+def daysInFebruary : (daysInMonth 2) = 28 := rfl
+def daysInDecember : (daysInMonth 12) = 31 := rfl
+
+def daysInYear2 : Nat :=
+  let rec counter : Nat → Nat
+    | 0 => 0
+    | n + 1 => if hMonth : isMonth n then
+        (daysInMonth ⟨n, hMonth⟩) + (counter n)
+      else
+        (counter n)
+  counter 13
+
+#eval daysInYear2
+
+def daysInYearIs365 : daysInYear2 = 365 := rfl
+
 def Year : Type := Nat
 
 structure RawDate where
