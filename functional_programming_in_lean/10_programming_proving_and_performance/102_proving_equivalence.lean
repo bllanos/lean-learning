@@ -48,6 +48,8 @@ theorem non_tail_sum_eq_tail_sum : NonTail.sum = Tail.sum := by
 
 -- # Practice
 
+-- ## Alternative proofs for the examples
+
 theorem non_tail_sum_cons (xs : List Nat) (x : Nat) : NonTail.sum (x :: xs) = x + NonTail.sum xs := by
   simp [NonTail.sum]
 
@@ -100,3 +102,107 @@ theorem non_tail_sum_eq_tail_sum2 : NonTail.sum = Tail.sum := by
     rw [tail_sum_cons2]
     rw [non_tail_sum_cons]
     rw [ih]
+
+-- ## Proving equivalence of Nat addition functions
+
+-- I think the `funext` tactic is equivalent to a forall proposition
+-- Can I substitute `funext` with a forall proposition?
+-- No, it's equivalent to adding the arguments to the functions as parameters
+-- instead of assumptions. (Parameters must be equivalent to assumptions.)
+-- See below.
+
+def Nat.plusL : Nat → Nat → Nat
+  | 0, k => k
+  | n + 1, k => (plusL n k) + 1
+
+def Nat.plusR : Nat → Nat → Nat
+  | n, 0 => n
+  | n, k + 1 => (plusR n k) + 1
+
+theorem plusl_plus_1 (n k : Nat) : n.plusL (k + 1) = n.plusL k + 1 := by
+  induction n with
+  | zero => rfl
+  | succ n' ih =>
+    unfold Nat.plusL
+    rewrite [ih]
+    rfl
+
+theorem plusr_plus_1 (n k : Nat) : (n + 1).plusR k = n.plusR k + 1 := by
+  induction k with
+  | zero => rfl
+  | succ k' ih =>
+    unfold Nat.plusR
+    rewrite [ih]
+    rfl
+
+theorem plusl_eq_plusr_funext : Nat.plusL = Nat.plusR := by
+  funext n k
+  induction n with
+  | zero => induction k with
+    | zero => rfl
+    | succ k' ihk =>
+      unfold Nat.plusL Nat.plusR
+      rewrite [←ihk]
+      unfold Nat.plusL
+      rfl
+  | succ n' ihn =>
+    unfold Nat.plusL
+    rewrite [ihn]
+    rewrite [plusr_plus_1 n' k]
+    rfl
+
+theorem plusl_eq_plusr_forall (n k : Nat) : Nat.plusL n k = Nat.plusR n k := by
+  induction n with
+  | zero => induction k with
+    | zero => rfl
+    | succ k' ihk =>
+      unfold Nat.plusL Nat.plusR
+      rewrite [←ihk]
+      unfold Nat.plusL
+      rfl
+  | succ n' ihn =>
+    unfold Nat.plusL
+    rewrite [ihn]
+    rewrite [plusr_plus_1 n' k]
+    rfl
+
+-- # Exercises
+
+-- ## Natural number addition
+
+theorem zero_add (n : Nat) : 0 + n = n := by
+  induction n with
+  | zero => rfl
+  | succ n' ih =>
+    -- It would be better to unfold the definition of +, to avoid relying on a theorem to be proven,
+    -- but I'm not sure how to do so without expressing this theorem in terms of a redefinition of +.
+    rw [←Nat.add_assoc]
+    rw [ih]
+
+theorem zero_add2 (n : Nat) : Nat.plusR 0 n = n := by
+  induction n with
+  | zero => rfl
+  | succ n' ih =>
+    unfold Nat.plusR
+    rw [ih]
+
+theorem add_assoc (n m k : Nat) : Nat.plusR (Nat.plusR n m) k = Nat.plusR n (Nat.plusR m k) := by
+  induction n with
+  | zero =>
+    rw [zero_add2]
+    rw [zero_add2]
+  | succ n' ihn =>
+    rewrite [plusr_plus_1 n' m]
+    rewrite [plusr_plus_1 (n'.plusR m) k]
+    rewrite [plusr_plus_1 n' (m.plusR k)]
+    rw [←ihn]
+
+theorem add_comm (n m : Nat) : Nat.plusR n m = Nat.plusR m n := by
+  induction n with
+  | zero =>
+    rw [zero_add2]
+    rfl
+  | succ n' ihn =>
+    rewrite [plusr_plus_1]
+    rw [ihn]
+    rfl
