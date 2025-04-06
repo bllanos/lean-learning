@@ -206,3 +206,70 @@ theorem add_comm (n m : Nat) : Nat.plusR n m = Nat.plusR m n := by
     rewrite [plusr_plus_1]
     rw [ihn]
     rfl
+
+-- ## More accumulator proofs
+
+-- ### Reversing lists
+
+def NonTail.reverse : List α → List α
+  | [] => []
+  | x :: xs => reverse xs ++ [x]
+
+def Tail.reverseHelper (soFar : List α) : List α → List α
+  | [] => soFar
+  | x :: xs => reverseHelper (x :: soFar) xs
+
+def Tail.reverse (xs : List α) : List α :=
+  Tail.reverseHelper [] xs
+
+theorem non_tail_reverse_eq_helper_accum (xs : List α) :
+    (soFar : List α) → (NonTail.reverse xs) ++ soFar = Tail.reverseHelper soFar xs := by
+  induction xs with
+  | nil =>
+    intro soFar
+    rfl
+  | cons y ys ih =>
+    intro soFar
+    simp [NonTail.reverse, Tail.reverseHelper]
+    exact ih (y :: soFar)
+
+theorem non_tail_reverse_eq_tail_reverse : @NonTail.reverse = @Tail.reverse := by
+  funext α xs
+  unfold Tail.reverse
+  rw [←List.append_nil (NonTail.reverse xs)]
+  exact non_tail_reverse_eq_helper_accum xs []
+
+-- ### Factorial
+
+def NonTail.factorial : Nat → Nat
+  | 0 => 1
+  | n + 1 => NonTail.factorial n * (n + 1)
+
+def Tail.factorialHelper (soFar : Nat) : Nat → Nat
+  | 0 => soFar
+  | n + 1 => factorialHelper (soFar * (n + 1)) n
+
+def Tail.factorial (x : Nat) : Nat :=
+  factorialHelper 1 x
+
+theorem non_tail_factorial_eq_helper_accum (x : Nat) :
+    (soFar : Nat) → (NonTail.factorial x) * soFar = Tail.factorialHelper soFar x := by
+  induction x with
+  | zero =>
+    intro soFar
+    -- simp +arith [NonTail.factorial, Tail.factorialHelper] -- This works too
+    unfold NonTail.factorial Tail.factorialHelper
+    rw [Nat.mul_comm]
+    rw [Nat.mul_one]
+  | succ y ih =>
+    intro soFar
+    simp [NonTail.factorial, Tail.factorialHelper]
+    rw [Nat.mul_assoc (NonTail.factorial y) (y + 1) soFar]
+    rw [Nat.mul_comm (y + 1) soFar]
+    exact ih (soFar * (y + 1))
+
+theorem non_tail_factorial_eq_tail_factorial : NonTail.factorial = Tail.factorial := by
+  funext x
+  unfold Tail.factorial
+  rw [←Nat.mul_one (NonTail.factorial x)]
+  exact non_tail_factorial_eq_helper_accum x 1
