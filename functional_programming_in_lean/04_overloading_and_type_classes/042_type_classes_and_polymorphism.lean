@@ -7,13 +7,16 @@
 
 -- ## Defining polymorphic functions with instance implicits
 
-def sumList [Add α] [OfNat α 0] : List α → α
+def sumList {α: Type u} [Add α] [OfNat α 0] : List α → α
   | [] => 0
   | x :: xs => x + sumList xs
 
 def fourNats : List Nat := [1, 2, 3, 4]
 
 #eval sumList fourNats
+
+-- '@' makes typeclass instance and other parameters explicit
+#eval @sumList Nat instAddNat _ fourNats
 
 structure PPoint {α : Type} where
   x : α

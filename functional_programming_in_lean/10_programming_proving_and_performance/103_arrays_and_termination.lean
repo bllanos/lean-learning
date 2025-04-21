@@ -50,6 +50,9 @@ theorem four_is_not_three : ¬ IsThree 4 := by
 theorem four_is_not_three2 : ¬ IsThree 4 :=
   Not.intro (fun h => nomatch h)
 
+theorem four_is_not_three3 : ¬ IsThree 4 :=
+  Not.intro nofun
+
 -- ### Inequality of natural numbers
 
 inductive Nat.le2 (n : Nat) : Nat → Prop
@@ -73,6 +76,38 @@ instance : LT2 Nat where
 theorem four_lt_seven : 4 < 7 :=
   open Nat.le in
   step (step refl)
+
+-- ## Proving termination
+
+def arrayMapHelper (f : α → β) (arr : Array α) (soFar : Array β) (i : Nat) : Array β :=
+  if inBounds : i < arr.size then
+    arrayMapHelper f arr (soFar.push (f arr[i])) (i + 1)
+  else
+    soFar
+
+def arrayMapHelper2 (f : α → β) (arr : Array α) (soFar : Array β) (i : Nat) : Array β :=
+  if inBounds : i < arr.size then
+    arrayMapHelper2 f arr (soFar.push (f arr[i])) (i + 1)
+  else
+    soFar
+termination_by arr.size - i
+
+def Array.map2 (f : α → β) (arr : Array α) : Array β :=
+  arrayMapHelper f arr Array.empty 0
+
+def findHelper (arr : Array α) (p : α → Bool) (i : Nat) : Option (Nat × α) :=
+  if h : i < arr.size then
+    let x := arr[i]
+    if p x then
+      some (i, x)
+    else
+      findHelper arr p (i + 1)
+  else
+    none
+termination_by arr.size - i
+
+def Array.find2 (arr : Array α) (p : α → Bool) : Option (Nat × α) :=
+  findHelper arr p 0
 
 -- # Practice
 
@@ -112,3 +147,40 @@ theorem is_three_equiv_eq_three2 {x : Nat} : (IsThree x) ↔ (x = 3) := by
 theorem is_three_eq_eq_three2 {x : Nat} : (IsThree x) = (x = 3) := by
   simp
   exact is_three_equiv_eq_three2
+
+-- ## Using a proposition to find in an array
+
+#eval #[1, 2, 3, 4].find2 ( · > 2 ) -- Parameter type is `α → Bool`
+#check ( · > 2 ) -- Type `Nat → Prop`
+
+def pred1 {α : Type u} (_a : α) : Prop :=
+  EasyToProve
+#check (pred1) -- Type `?m.29248 → Prop`
+-- #eval #[1, 2, 3, 4].find2 pred1 -- Type mismatch. Why did `( · > 2 )` work?
+
+instance instDecidableEasyToProve : Decidable EasyToProve :=
+  Decidable.isTrue EasyToProve.heresTheProof
+
+instance instDecidablePredPred1 {α : Type u} : DecidablePred (α := α) (pred1 (α := α)) :=
+  fun _ => instDecidableEasyToProve
+
+def findWithPredHelper (arr : Array α) (p : α → Prop) [DecidablePred p] (i : Nat) : Option (Nat × α) :=
+  if h : i < arr.size then
+    let x := arr[i]
+    if p x then
+      some (i, x)
+    else
+      findWithPredHelper arr p (i + 1)
+  else
+    none
+termination_by arr.size - i
+
+def Array.findWithPred (arr : Array α) (p : α → Prop) [DecidablePred p] : Option (Nat × α) :=
+  findWithPredHelper arr p 0
+
+#eval #[1, 2, 3, 4].findWithPred ( · > 2 )
+
+#eval #[1, 2, 3, 4].findWithPred pred1
+
+-- Explicitly passing typeclass instances
+#eval @Array.findWithPred Nat #[1, 2, 3, 4] pred1 instDecidablePredPred1
