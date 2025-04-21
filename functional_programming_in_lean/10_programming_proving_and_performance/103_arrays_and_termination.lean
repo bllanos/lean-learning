@@ -184,3 +184,93 @@ def Array.findWithPred (arr : Array α) (p : α → Prop) [DecidablePred p] : Op
 
 -- Explicitly passing typeclass instances
 #eval @Array.findWithPred Nat #[1, 2, 3, 4] pred1 instDecidablePredPred1
+
+-- # Exercises
+
+-- ## ForM instance for arrays
+
+def arrayForMHelper [Monad m] (arr : Array α) (action : α → m PUnit) (i : Nat) : m PUnit :=
+  if h : i < arr.size then do
+    let x := arr[i]
+    action x
+    arrayForMHelper arr action (i + 1)
+  else
+    pure ()
+termination_by arr.size - i -- The `termination_by` clause is optional
+
+def Array.forM2 [Monad m] (arr : Array α) (action : α → m PUnit) : m PUnit :=
+  arrayForMHelper arr action 0
+
+instance : ForM m (Array α) α where
+  forM := Array.forM2
+
+#eval forM #[1, 2, 3, 4] IO.println
+#eval OptionT.run (forM #[1, 2, 3, 4] (fun x =>
+  if x < 4 then
+    OptionT.lift (do
+      IO.println x)
+  else failure
+))
+
+-- ## Reversing arrays
+
+-- This function is structurally recursive on `i`
+def arrayReverseHelper(arr soFar : Array α) (i : Nat) (hi : i ≤ arr.size) : Array α :=
+  match i with
+  | 0 => soFar
+  | j + 1 =>
+    let x := arr[j]
+    let hj : j ≤ arr.size := by
+      rw [Nat.le_iff_lt_or_eq]
+      constructor
+      exact hi
+    arrayReverseHelper arr (soFar.push x) j hj
+
+def Array.reverse2 (arr : Array α): Array α :=
+  arrayReverseHelper arr Array.empty arr.size (Nat.le_of_eq rfl)
+
+#eval #[1, 2, 3, 4].reverse2
+#eval #[4].reverse2
+#eval (#[].reverse2 : Array Nat)
+
+-- ## Using for-in with arrays
+
+def Array.map3 (f : α → β) (arr : Array α) : Array β := Id.run do
+  let mut result := Array.empty
+  for x in arr do
+    result := result.push (f x)
+  pure result
+
+#eval #[1, 2, 3, 4].map3 (· * 2)
+
+def Array.find3 (arr : Array α) (p : α → Bool) : Option (Nat × α) := Id.run do
+  let mut i := 0
+  for x in arr do
+    if p x then return some ⟨i, x⟩
+    i := i + 1
+  pure none
+
+#eval #[1, 2, 3, 4].find3 (· == 3)
+#eval #[1, 2, 3, 4].find3 (· == 5)
+
+def Array.forM3 [Monad m] (arr : Array α) (action : α → m PUnit) : m PUnit := do
+  for x in arr do
+    action x
+  pure ()
+
+instance : ForM m (Array α) α where
+  forM := Array.forM3
+
+#eval forM #[1, 2, 3, 4] IO.println
+
+-- An inefficient version of `reverse`, but there is no need
+-- for explicit indexing
+def Array.reverse3 (arr : Array α): Array α := Id.run do
+  let mut result := Array.empty
+  for x in arr do
+    result := #[x] ++ result
+  pure result
+
+#eval #[1, 2, 3, 4].reverse3
+#eval #[4].reverse3
+#eval (#[].reverse3 : Array Nat)
