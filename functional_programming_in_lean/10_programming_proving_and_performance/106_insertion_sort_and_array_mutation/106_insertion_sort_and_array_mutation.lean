@@ -82,3 +82,5 @@ def insertionSort [Ord α] (arr : Array α) : Array α :=
 #eval insertionSort #["quartz", "marble", "granite", "hematite"]
 
 -- ## Is this really insertion sort?
+
+-- See `instrumented_program.lean`
