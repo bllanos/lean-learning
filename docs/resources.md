@@ -13,6 +13,8 @@ We found the following resources helpful. Each one is listed alongside the date 
 
 ### Core Lean resources
 
+1. (2025) [Functional Programming in Lean](https://lean-lang.org/functional_programming_in_lean/), by David Thrane Christiansen, updated April 2025
+
 ### Other Lean resources
 
 ### Software design

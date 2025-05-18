@@ -38,6 +38,13 @@ def Pos.mul : Pos → Pos → Pos
 instance : Mul Pos where
   mul := Pos.mul
 
+instance : OfNat Pos (n + 1) where
+  ofNat :=
+    let rec natPlusOne : Nat → Pos
+      | 0 => Pos.one
+      | k + 1 => Pos.succ (natPlusOne k)
+    natPlusOne n
+
 -- Efficient representation
 -- (same representation as `Nat`)
 def FastPos : Type := {x : Nat // x > 0}
@@ -88,8 +95,15 @@ def FastPos.mul (p1 p2 : FastPos) : FastPos :=
 instance : Mul FastPos where
   mul := FastPos.mul
 
+instance : OfNat FastPos (n + 1) where
+  ofNat := ⟨n + 1, by simp⟩
+
 #eval Pos.one + (Pos.succ Pos.one)
+#eval (1 : Pos) + (2 : Pos)
 #eval (Pos.one + (Pos.succ Pos.one)) * (Pos.succ Pos.one)
+#eval (3 : Pos) * (2 : Pos)
 
 #eval (⟨1, by decide⟩ + ⟨2, by decide⟩ : FastPos)
+#eval (1 : FastPos) + (2 : FastPos)
 #eval (⟨3, by decide⟩ * ⟨2, by decide⟩ : FastPos)
+#eval (3 : FastPos) * (2 : FastPos)
