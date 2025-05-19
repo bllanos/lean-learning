@@ -1,0 +1,6 @@
+name = "map_array"
+version = "0.1.0"
+defaultTargets = ["MapArray"]
+
+[[lean_lib]]
+name = "MapArray"
