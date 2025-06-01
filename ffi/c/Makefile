@@ -17,11 +17,6 @@ LEAN_LIBDIR := $(LEAN_SYSROOT)/lib/lean
 $(OUT_DIR):
 	mkdir -p $@
 
-ifneq ($(OS),Windows_NT)
-# Add shared library paths to loader path (no Windows equivalent)
-LINK_FLAGS=-Wl,-rpath,$(LEAN_LIBDIR) -Wl,-rpath,$(PWD)/$(MAP_ARRAY_DIR)/.lake/build/lib
-endif
-
 $(OUT_DIR)/main: main.c lake | $(OUT_DIR)
 # Add library paths for Lake package and for Lean itself
 #
@@ -44,8 +39,7 @@ $(OUT_DIR)/main: main.c lake | $(OUT_DIR)
 		$(SYSROOT_LIBDIR)/libgmp.a \
 		$(SYSROOT_LIBDIR)/libc++.a \
 		$(SYSROOT_LIBDIR)/libc++abi.a \
-		-lm \
-		$(LINK_FLAGS)
+		-lm
 
 run: $(OUT_DIR)/main
 ifeq ($(OS),Windows_NT)
