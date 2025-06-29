@@ -1,7 +1,11 @@
 [workspace]
 resolver = "3"
-members = ["map_array_bin"]
+members = ["lean_sys", "map_array_bin", "map_array_sys"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
+
+[workspace.dependencies]
+bindgen = "0.71.1"
+cc = "1.2.26"

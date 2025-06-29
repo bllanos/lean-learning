@@ -1,0 +1,8 @@
+[package]
+name = "lean-sys"
+version.workspace = true
+edition.workspace = true
+
+[build-dependencies]
+bindgen = { workspace = true }
+cc = { workspace = true }
