@@ -8,6 +8,7 @@ We found the following resources helpful. Each one is listed alongside the date 
 
 - [Core Lean resources](#core-rust-programming-language-resources)
 - [Other Lean resources](#other-rust-programming-language-resources)
+- [Related systems](#related-systems)
 - [Software design](#software-design)
 - [Theory](#theory)
 
@@ -16,6 +17,10 @@ We found the following resources helpful. Each one is listed alongside the date 
 1. (2025) [Functional Programming in Lean](https://lean-lang.org/functional_programming_in_lean/), by David Thrane Christiansen, updated April 2025
 
 ### Other Lean resources
+
+### Related systems
+
+1. (2025) [Proof-Oriented Programming in F*](https://fstar-lang.org/tutorial/proof-oriented-programming-in-fstar.pdf), by Nikhil Swamy, Guido Martínez, and Aseem Rastogi, updated May 23, 2025
 
 ### Software design
 
