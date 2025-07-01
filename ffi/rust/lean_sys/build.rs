@@ -177,6 +177,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .wrap_static_fns_path(&inline_wrapper_functions_out_file)
         // Block functions that produce compilation errors
         .blocklist_function("lean_get_rc_mt_addr")
+        .must_use_type("lean_obj_res")
+        .must_use_type("b_lean_obj_res")
+        .use_core()
+        .merge_extern_blocks(true)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()?;
 

@@ -1,3 +1,4 @@
+#![no_std]
 // This warning will hopefully be resolved in a future version of the `bindgen`
 // crate
 #![allow(unsafe_op_in_unsafe_fn)]
