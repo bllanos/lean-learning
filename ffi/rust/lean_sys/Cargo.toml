@@ -6,3 +6,5 @@ edition.workspace = true
 [build-dependencies]
 bindgen = { workspace = true }
 cc = { workspace = true }
+elan = { workspace = true }
+elan-dist = { workspace = true }

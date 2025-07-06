@@ -2,13 +2,14 @@ use std::env;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fmt;
-use std::fs::File;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use bindgen::builder;
+use elan::{Cfg as ElanCfg, Notification, OverrideReason, Toolchain, notify::NotificationLevel};
+use elan_dist::dist::ToolchainDesc;
 
 const INLINE_FUNCTIONS_WRAPPER_NAME: &str = "lean_sys_inline_functions_wrapper";
 
@@ -145,14 +146,6 @@ impl LakeEnv {
         self.lean_include_directory().join("lean").join("lean.h")
     }
 
-    pub fn elan_toolchain(&self) -> &LeanToolchainVersion {
-        &self.elan_toolchain
-    }
-
-    pub fn elan_toolchain_directory_path(&self) -> &Path {
-        self.lean_sysroot.parent().unwrap()
-    }
-
     pub fn export_rustc_env(&self) {
         println!(
             "cargo::rustc-env={}={}",
@@ -167,42 +160,89 @@ impl LakeEnv {
     }
 }
 
+fn create_elan_cfg() -> Result<ElanCfg, Box<dyn Error>> {
+    Ok(ElanCfg::from_env(Arc::new(
+        move |n: Notification<'_>| match n.level() {
+            NotificationLevel::Verbose => {
+                println!("{}", n);
+            }
+            NotificationLevel::Info => {
+                println!("{}", n);
+            }
+            NotificationLevel::Warn => {
+                println!("cargo:warning={}", n);
+            }
+            NotificationLevel::Error => {
+                println!("cargo:error={}", n);
+            }
+        },
+    ))?)
+}
+
+fn rerun_build_if_elan_environment_variables_change() {
+    println!("cargo:rerun-if-env-changed=ELAN_TOOLCHAIN");
+}
+
+fn rerun_build_if_elan_settings_change(elan_cfg: &ElanCfg) {
+    println!(
+        "cargo:rerun-if-changed={}",
+        elan_cfg.elan_dir.join("settings.toml").display()
+    );
+}
+
+fn rerun_build_if_lean_toolchain_override_changes(
+    elan_cfg: &ElanCfg,
+    override_reason: &OverrideReason,
+) -> Result<(), Box<dyn Error>> {
+    match override_reason {
+        OverrideReason::Environment => {
+            rerun_build_if_elan_environment_variables_change();
+            Ok(())
+        }
+        OverrideReason::InToolchainDirectory(_) => Err(format!(
+            "unexpected toolchain override_reason reason: {}",
+            override_reason
+        )
+        .into()),
+        OverrideReason::LeanpkgFile(path) => {
+            println!("cargo:rerun-if-changed={}", path.display());
+            Ok(())
+        }
+        OverrideReason::OverrideDB(_) => {
+            rerun_build_if_elan_settings_change(elan_cfg);
+            Ok(())
+        }
+        OverrideReason::ToolchainFile(path) => {
+            println!("cargo:rerun-if-changed={}", path.display());
+            Ok(())
+        }
+    }
+}
+
 #[derive(PartialEq, Eq)]
 enum LeanToolchainVersion {
     Version(String),
+    Nightly,
+    Beta,
     Stable,
 }
 
 impl LeanToolchainVersion {
+    const NIGHTLY_VERSION: &str = "nightly";
+    const BETA_VERSION: &str = "beta";
     const STABLE_VERSION: &str = "stable";
 
-    pub fn toolchain_file_path_from_lake_package_path<P: AsRef<Path>>(
+    pub fn from_lake_package_path<P: AsRef<Path>>(
+        elan_cfg: &ElanCfg,
         lake_package_path: P,
-    ) -> PathBuf {
-        lake_package_path.as_ref().join("lean-toolchain")
+    ) -> Result<(Self, Option<OverrideReason>), Box<dyn Error>> {
+        let (toolchain, override_reason) =
+            elan_cfg.toolchain_for_dir(lake_package_path.as_ref())?;
+        Ok((toolchain.try_into()?, override_reason))
     }
 
-    pub fn from_toolchain_file<P: AsRef<Path>>(
-        toolchain_file_path: P,
-    ) -> Result<Self, Box<dyn Error>> {
-        let mut toolchain_file = File::open(&toolchain_file_path).map_err(|err| {
-            format!(
-                "failed to open file \"{}\" to inspect Lean toolchain version: {}",
-                toolchain_file_path.as_ref().display(),
-                err
-            )
-        })?;
-
-        let mut version = String::new();
-        toolchain_file.read_to_string(&mut version).map_err(|err| {
-            format!(
-                "failed to read file \"{}\" to inspect Lean toolchain version: {}",
-                toolchain_file_path.as_ref().display(),
-                err
-            )
-        })?;
-
-        Self::from_str(&version)
+    fn is_floating_version(&self) -> bool {
+        !matches!(self, Self::Version(_))
     }
 }
 
@@ -211,17 +251,37 @@ impl FromStr for LeanToolchainVersion {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let trimmed_version = s.trim();
-        Ok(if trimmed_version == Self::STABLE_VERSION {
-            Self::Stable
-        } else {
-            Self::Version(trimmed_version.into())
+        Ok(match trimmed_version {
+            Self::NIGHTLY_VERSION => Self::Nightly,
+            Self::BETA_VERSION => Self::Beta,
+            Self::STABLE_VERSION => Self::Stable,
+            specific_version => Self::Version(specific_version.into()),
         })
+    }
+}
+
+impl<'a> TryFrom<Toolchain<'a>> for LeanToolchainVersion {
+    type Error = Box<dyn Error>;
+
+    fn try_from(toolchain: Toolchain<'a>) -> Result<Self, Self::Error> {
+        let desc = toolchain.desc;
+        match desc {
+            ToolchainDesc::Local { name } => Ok(Self::Version(name)),
+            ToolchainDesc::Remote {
+                ref from_channel, ..
+            } => match from_channel {
+                Some(channel) => FromStr::from_str(&channel),
+                None => FromStr::from_str(&desc.to_string()),
+            },
+        }
     }
 }
 
 impl fmt::Display for LeanToolchainVersion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Nightly => f.write_str(Self::NIGHTLY_VERSION),
+            Self::Beta => f.write_str(Self::BETA_VERSION),
             Self::Stable => f.write_str(Self::STABLE_VERSION),
             Self::Version(str) => f.write_str(&str),
         }
@@ -257,41 +317,29 @@ fn get_lake_environment<P: AsRef<Path>>(lake_package_path: P) -> Result<LakeEnv,
 
 fn rerun_build_if_lean_version_changes<P: AsRef<Path>>(
     lake_package_path: P,
-    lake_env: &LakeEnv,
 ) -> Result<(), Box<dyn Error>> {
-    let toolchain_file_path =
-        LeanToolchainVersion::toolchain_file_path_from_lake_package_path(lake_package_path);
-    println!("cargo:rerun-if-changed={}", toolchain_file_path.display());
-
-    let lean_toolchain_version = LeanToolchainVersion::from_toolchain_file(&toolchain_file_path)?;
-    match lean_toolchain_version {
-        LeanToolchainVersion::Stable => {
-            let elan_toolchain_directory = lake_env.elan_toolchain_directory_path();
-            println!(
-                "cargo:warning=specifying \"{}\" as the Lean toolchain version in \"{}\" will slow down Cargo builds because the Elan toolchains directory (\"{}\") must be monitored for changes to detect a Lean toolchain version change",
-                LeanToolchainVersion::STABLE_VERSION,
-                toolchain_file_path.display(),
-                elan_toolchain_directory.display()
-            );
-            println!(
-                "cargo:rerun-if-changed={}",
-                elan_toolchain_directory.display()
-            );
-            Ok(())
-        }
-        lean_toolchain_version => {
-            if &lean_toolchain_version == lake_env.elan_toolchain() {
-                Ok(())
-            } else {
-                Err(format!(
-                    "Lean toolchain from \"{}\", \"{}\", does not match the Lean toolchain from the Lake environment, \"{}\"",
-                    toolchain_file_path.display(),
-                    lean_toolchain_version,
-                    lake_env.elan_toolchain()
-                ).into())
-            }
-        }
+    rerun_build_if_elan_environment_variables_change();
+    let elan_cfg = create_elan_cfg()?;
+    rerun_build_if_elan_settings_change(&elan_cfg);
+    let (lean_toolchain_version, override_reason) =
+        LeanToolchainVersion::from_lake_package_path(&elan_cfg, &lake_package_path)?;
+    if let Some(override_reason) = override_reason {
+        rerun_build_if_lean_toolchain_override_changes(&elan_cfg, &override_reason)?;
     }
+
+    if lean_toolchain_version.is_floating_version() {
+        let elan_toolchain_directory = &elan_cfg.toolchains_dir;
+        println!(
+            "cargo:warning=specifying \"{}\" as the Lean toolchain version will slow down Cargo builds because the entire Elan toolchains directory (\"{}\") must be monitored for changes to detect a Lean toolchain version change",
+            lean_toolchain_version,
+            elan_toolchain_directory.display()
+        );
+        println!(
+            "cargo:rerun-if-changed={}",
+            elan_toolchain_directory.display()
+        );
+    }
+    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -301,7 +349,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let lean_sysroot_library_directory = lake_environment.lean_sysroot_library_directory();
 
     lake_environment.export_rustc_env();
-    rerun_build_if_lean_version_changes(lake_package_path, &lake_environment)?;
+    rerun_build_if_lean_version_changes(lake_package_path)?;
 
     println!(
         "cargo:rustc-link-search={}",
