@@ -11,6 +11,9 @@ pub const LEAN_GITHASH: &str = env!("LEAN_GITHASH");
 
 unsafe extern "C" {
     pub unsafe fn lean_initialize_runtime_module();
-    /// This would replace `lean_initialize_runtime_module()` if the code accesses the `Lean` package
+    /// This function replaces [`lean_initialize_runtime_module()`] when code
+    /// needs direct or indirect access to the `Lean` package
     pub unsafe fn lean_initialize();
+    pub unsafe fn lean_initialize_thread();
+    pub unsafe fn lean_finalize_thread();
 }
