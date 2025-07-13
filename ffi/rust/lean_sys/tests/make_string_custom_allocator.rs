@@ -1,6 +1,6 @@
 use std::alloc::{GlobalAlloc, Layout};
 use std::ffi::{CStr, CString, c_void};
-use std::str::{FromStr, Utf8Error};
+use std::str::FromStr;
 
 use lean_sys::{
     lean_dec_ref, lean_initialize_runtime_module, lean_io_mark_end_initialization, lean_mk_string,
@@ -47,7 +47,7 @@ unsafe impl GlobalAlloc for MimallocAllocator {
 /// uses Lean's allocator (assumed to be mimalloc) for dynamic memory allocation
 /// in Rust.
 #[test]
-fn make_string_custom_allocator() -> Result<(), Utf8Error> {
+fn make_string_custom_allocator() {
     unsafe {
         lean_initialize_runtime_module();
         lean_io_mark_end_initialization();
@@ -68,7 +68,7 @@ fn make_string_custom_allocator() -> Result<(), Utf8Error> {
         final_cstring = CStr::from_ptr(longer_lean_cstring);
     }
 
-    let final_string = final_cstring.to_str()?;
+    let final_string = final_cstring.to_str().unwrap();
     let mut expected_string = initial_string.clone();
     expected_string.push(new_char as char);
     assert_eq!(final_string, expected_string);
@@ -76,6 +76,4 @@ fn make_string_custom_allocator() -> Result<(), Utf8Error> {
     unsafe {
         lean_dec_ref(longer_lean_string);
     }
-
-    Ok(())
 }

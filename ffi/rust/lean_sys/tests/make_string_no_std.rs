@@ -1,7 +1,6 @@
 #![no_std]
 
 use core::ffi::CStr;
-use core::str::Utf8Error;
 
 use lean_sys::{
     lean_dec_ref, lean_initialize_runtime_module, lean_io_mark_end_initialization, lean_mk_string,
@@ -11,7 +10,7 @@ use lean_sys::{
 /// This test is a version of [`make_string_std()`](./make_string_std.rs) that
 /// does not rely on dynamic memory allocation in Rust.
 #[test]
-fn make_string_no_std() -> Result<(), Utf8Error> {
+fn make_string_no_std() {
     unsafe {
         lean_initialize_runtime_module();
         lean_io_mark_end_initialization();
@@ -31,13 +30,11 @@ fn make_string_no_std() -> Result<(), Utf8Error> {
         final_cstring = CStr::from_ptr(longer_lean_cstring);
     }
 
-    let final_string = final_cstring.to_str()?;
+    let final_string = final_cstring.to_str().unwrap();
     let expected_string = "Hello, world!";
     assert_eq!(final_string, expected_string);
 
     unsafe {
         lean_dec_ref(longer_lean_string);
     }
-
-    Ok(())
 }

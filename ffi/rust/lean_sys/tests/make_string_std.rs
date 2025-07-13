@@ -1,5 +1,5 @@
 use std::ffi::{CStr, CString};
-use std::str::{FromStr, Utf8Error};
+use std::str::FromStr;
 
 use lean_sys::{
     lean_dec_ref, lean_initialize_runtime_module, lean_io_mark_end_initialization, lean_mk_string,
@@ -31,7 +31,7 @@ use lean_sys::{
 /// uses mimalloc in
 /// [`make_string_no_custom_allocator.rs`](./make_string_no_custom_allocator.rs).
 #[test]
-fn make_string_std() -> Result<(), Utf8Error> {
+fn make_string_std() {
     unsafe {
         lean_initialize_runtime_module();
         lean_io_mark_end_initialization();
@@ -52,7 +52,7 @@ fn make_string_std() -> Result<(), Utf8Error> {
         final_cstring = CStr::from_ptr(longer_lean_cstring);
     }
 
-    let final_string = final_cstring.to_str()?;
+    let final_string = final_cstring.to_str().unwrap();
     let mut expected_string = initial_string.clone();
     expected_string.push(new_char as char);
     assert_eq!(final_string, expected_string);
@@ -60,6 +60,4 @@ fn make_string_std() -> Result<(), Utf8Error> {
     unsafe {
         lean_dec_ref(longer_lean_string);
     }
-
-    Ok(())
 }
