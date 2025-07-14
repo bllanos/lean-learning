@@ -142,8 +142,28 @@ impl LakeEnv {
         self.lean_sysroot.join("include")
     }
 
+    pub fn lean_clang_include_directory(&self) -> PathBuf {
+        self.lean_include_directory().join("clang")
+    }
+
+    pub fn lean_lean_include_directory(&self) -> PathBuf {
+        self.lean_include_directory().join("lean")
+    }
+
     pub fn lean_header_path(&self) -> PathBuf {
-        self.lean_include_directory().join("lean").join("lean.h")
+        self.lean_lean_include_directory().join("lean.h")
+    }
+
+    fn lean_bin_path(&self) -> PathBuf {
+        self.lean_sysroot.join("bin")
+    }
+
+    pub fn lean_clang_path(&self) -> PathBuf {
+        self.lean_bin_path().join("clang")
+    }
+
+    pub fn lean_ar_path(&self) -> PathBuf {
+        self.lean_bin_path().join("llvm-ar")
     }
 
     pub fn export_rustc_env(&self) {
@@ -419,7 +439,12 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     cc::Build::new()
         .file(&inline_wrapper_functions_out_file)
-        .include(lean_include_directory)
+        .include(lake_environment.lean_include_directory())
+        .include(lake_environment.lean_clang_include_directory())
+        .include(lake_environment.lean_lean_include_directory())
+        .static_flag(true)
+        .compiler(lake_environment.lean_clang_path())
+        .archiver(lake_environment.lean_ar_path())
         .compile(INLINE_FUNCTIONS_WRAPPER_NAME);
 
     Ok(())
