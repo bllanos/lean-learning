@@ -1,0 +1,10 @@
+[package]
+name = "lean-build"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+bindgen = { workspace = true }
+cc = { workspace = true }
+elan = { workspace = true }
+elan-dist = { workspace = true }

@@ -833,13 +833,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "lean-sys"
+name = "lean-build"
 version = "0.1.0"
 dependencies = [
  "bindgen",
  "cc",
  "elan",
  "elan-dist",
+]
+
+[[package]]
+name = "lean-sys"
+version = "0.1.0"
+dependencies = [
+ "lean-build",
 ]
 
 [[package]]
