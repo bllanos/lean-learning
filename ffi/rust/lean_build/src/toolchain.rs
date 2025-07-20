@@ -57,7 +57,7 @@ impl<'a> TryFrom<Toolchain<'a>> for LeanToolchainVersion {
             ToolchainDesc::Remote {
                 ref from_channel, ..
             } => match from_channel {
-                Some(channel) => FromStr::from_str(&channel),
+                Some(channel) => FromStr::from_str(channel),
                 None => FromStr::from_str(&desc.to_string()),
             },
         }
@@ -70,7 +70,7 @@ impl fmt::Display for LeanToolchainVersion {
             Self::Nightly => f.write_str(Self::NIGHTLY_VERSION),
             Self::Beta => f.write_str(Self::BETA_VERSION),
             Self::Stable => f.write_str(Self::STABLE_VERSION),
-            Self::Version(str) => f.write_str(&str),
+            Self::Version(str) => f.write_str(str),
         }
     }
 }

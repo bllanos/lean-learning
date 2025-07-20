@@ -10,16 +10,16 @@ fn create_elan_cfg() -> Result<ElanCfg, Box<dyn Error>> {
     Ok(ElanCfg::from_env(Arc::new(
         move |n: Notification<'_>| match n.level() {
             NotificationLevel::Verbose => {
-                println!("{}", n);
+                println!("{n}");
             }
             NotificationLevel::Info => {
-                println!("{}", n);
+                println!("{n}");
             }
             NotificationLevel::Warn => {
-                println!("cargo:warning={}", n);
+                println!("cargo:warning={n}");
             }
             NotificationLevel::Error => {
-                println!("cargo:error={}", n);
+                println!("cargo:error={n}");
             }
         },
     ))?)
@@ -45,11 +45,9 @@ fn rerun_build_if_lean_toolchain_override_changes(
             rerun_build_if_elan_environment_variables_change();
             Ok(())
         }
-        OverrideReason::InToolchainDirectory(_) => Err(format!(
-            "unexpected toolchain override_reason reason: {}",
-            override_reason
-        )
-        .into()),
+        OverrideReason::InToolchainDirectory(_) => {
+            Err(format!("unexpected toolchain override_reason reason: {override_reason}").into())
+        }
         OverrideReason::LeanpkgFile(path) => {
             println!("cargo:rerun-if-changed={}", path.display());
             Ok(())

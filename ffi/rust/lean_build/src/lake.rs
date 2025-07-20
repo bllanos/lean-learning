@@ -183,6 +183,6 @@ pub fn get_lake_environment<P: AsRef<Path>>(
     if output.status.success() {
         LakeEnv::from_posix_env(&output.stdout)
     } else {
-        Err(format!("Lake invocation with arguments {:?} failed", args).into())
+        Err(format!("Lake invocation with arguments {args:?} failed").into())
     }
 }

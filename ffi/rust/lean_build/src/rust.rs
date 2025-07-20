@@ -9,7 +9,7 @@ pub fn create_lean_sys_root_module<P: AsRef<Path>>(
     lean_sys_root_module_path: P,
 ) -> Result<(), Box<dyn Error>> {
     let path = lean_sys_root_module_path.as_ref();
-    let mut lean_sys_root_module_file = File::create(&path)
+    let mut lean_sys_root_module_file = File::create(path)
         .map_err(|err| format!("failed to create file \"{}\": {}", path.display(), err))?;
 
     lean_sys_root_module_file
