@@ -19,5 +19,5 @@ fn get_lake_package_path() -> Result<PathBuf, Box<dyn Error>> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let lake_package_path = get_lake_package_path()?;
-    lean_build::build(lake_package_path, Default::default())
+    lean_build::runtime_build::build(lake_package_path, Default::default())
 }
