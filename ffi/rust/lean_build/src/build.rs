@@ -18,6 +18,22 @@ pub struct OutputFilesConfig<'a> {
     ///
     /// The filename extension should be included in the string.
     pub lean_bindings_filename: &'a str,
+    /// The name of the file that can serve as the `lib.rs` file of a Lean sys library
+    ///
+    /// This file will be output to the build directory with the given name. The
+    /// filename extension should be included in the string. It is intended to
+    /// be used with `include!()` as follows:
+    ///
+    /// ```ignore
+    /// #![no_std]
+    /// // This warning will hopefully be resolved in a future version of the `bindgen`
+    /// // crate
+    /// #![allow(unsafe_op_in_unsafe_fn)]
+    /// #![allow(non_upper_case_globals)]
+    /// #![allow(non_camel_case_types)]
+    /// include!(env!("LEAN_SYS_ROOT_MODULE_INCLUDE"));
+    /// ```
+    pub lean_sys_root_module_filename: &'a str,
 }
 
 impl Default for OutputFilesConfig<'static> {
@@ -25,6 +41,7 @@ impl Default for OutputFilesConfig<'static> {
         Self {
             inline_functions_library_base_name: "lean_sys_inline_functions_wrapper",
             lean_bindings_filename: "bindings.rs",
+            lean_sys_root_module_filename: "lean_sys_root_module.rs",
         }
     }
 }
@@ -117,6 +134,9 @@ pub fn build<P: AsRef<Path>>(
         .compiler(lake_environment.lean_clang_path())
         .archiver(lake_environment.lean_ar_path())
         .compile(output_files_config.inline_functions_library_base_name);
+
+    let lean_sys_root_module_path = out_dir.join(output_files_config.lean_sys_root_module_filename);
+    super::rust::create_lean_sys_root_module(lean_sys_root_module_path)?;
 
     Ok(())
 }
