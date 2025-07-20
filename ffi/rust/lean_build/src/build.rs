@@ -6,9 +6,33 @@ use bindgen::builder;
 
 use crate::lake;
 
-const INLINE_FUNCTIONS_WRAPPER_NAME: &str = "lean_sys_inline_functions_wrapper";
+pub struct OutputFilesConfig<'a> {
+    /// The base of the native library that will be generated to contain functions
+    /// that are declared as `inline` in Lean's header files
+    ///
+    /// For example, `"foo"` will result in `foo.c` and `libfoo.a` in the build
+    /// output directory.
+    pub inline_functions_library_base_name: &'a str,
+    /// The name of the file containing Rust bindings to Lean that will be
+    /// generated in the build output directory
+    ///
+    /// The filename extension should be included in the string.
+    pub lean_bindings_filename: &'a str,
+}
 
-pub fn build<P: AsRef<Path>>(lake_package_path: P) -> Result<(), Box<dyn Error>> {
+impl Default for OutputFilesConfig<'static> {
+    fn default() -> Self {
+        Self {
+            inline_functions_library_base_name: "lean_sys_inline_functions_wrapper",
+            lean_bindings_filename: "bindings.rs",
+        }
+    }
+}
+
+pub fn build<P: AsRef<Path>>(
+    lake_package_path: P,
+    output_files_config: OutputFilesConfig,
+) -> Result<(), Box<dyn Error>> {
     let lake_environment = lake::get_lake_environment(&lake_package_path)?;
     let lean_library_directory = lake_environment.lean_library_directory();
     let lean_sysroot_library_directory = lake_environment.lean_sysroot_library_directory();
@@ -56,8 +80,10 @@ pub fn build<P: AsRef<Path>>(lake_package_path: P) -> Result<(), Box<dyn Error>>
 
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
 
-    let inline_wrapper_functions_out_file =
-        out_dir.join(format!("{}.c", INLINE_FUNCTIONS_WRAPPER_NAME));
+    let inline_wrapper_functions_out_file = out_dir.join(format!(
+        "{}.c",
+        output_files_config.inline_functions_library_base_name
+    ));
 
     let bindings = builder()
         .clang_args(&["-I", lean_include_directory_str])
@@ -74,7 +100,7 @@ pub fn build<P: AsRef<Path>>(lake_package_path: P) -> Result<(), Box<dyn Error>>
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()?;
 
-    let bindings_out_file = out_dir.join("bindings.rs");
+    let bindings_out_file = out_dir.join(output_files_config.lean_bindings_filename);
     bindings.write_to_file(&bindings_out_file)?;
 
     println!(
@@ -90,7 +116,7 @@ pub fn build<P: AsRef<Path>>(lake_package_path: P) -> Result<(), Box<dyn Error>>
         .static_flag(true)
         .compiler(lake_environment.lean_clang_path())
         .archiver(lake_environment.lean_ar_path())
-        .compile(INLINE_FUNCTIONS_WRAPPER_NAME);
+        .compile(output_files_config.inline_functions_library_base_name);
 
     Ok(())
 }

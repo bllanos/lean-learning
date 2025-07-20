@@ -3,4 +3,4 @@ mod elan;
 mod lake;
 mod toolchain;
 
-pub use build::build;
+pub use build::{OutputFilesConfig, build};
