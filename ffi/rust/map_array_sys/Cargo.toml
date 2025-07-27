@@ -3,5 +3,8 @@ name = "map-array-sys"
 version.workspace = true
 edition.workspace = true
 
+[dependencies]
+lean-sys = { path = "../lean_sys" }
+
 [build-dependencies]
-bindgen = { workspace = true }
+lean-build = { path = "../lean_build" }

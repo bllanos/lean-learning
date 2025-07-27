@@ -8,3 +8,4 @@ bindgen = { workspace = true }
 cc = { workspace = true }
 elan = { workspace = true }
 elan-dist = { workspace = true }
+glob = { workspace = true }

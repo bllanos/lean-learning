@@ -13,3 +13,4 @@ cc = "1.2.26"
 # <https://github.com/leanprover/elan/issues/168>
 elan = { git = "https://github.com/leanprover/elan.git", tag = "v4.0.0" }
 elan-dist = { git = "https://github.com/leanprover/elan.git", tag = "v4.0.0" }
+glob = "0.3.2"

@@ -69,13 +69,13 @@ pub fn build<P: AsRef<Path>>(
         lean_sysroot_library_directory.display()
     );
 
-    println!("cargo:rustc-link-lib=static=Init",);
-    println!("cargo:rustc-link-lib=static=leanrt",);
-    println!("cargo:rustc-link-lib=static=uv",);
-    println!("cargo:rustc-link-lib=static=gmp",);
-    println!("cargo:rustc-link-lib=static=c++",);
-    println!("cargo:rustc-link-lib=static=c++abi",);
-    println!("cargo:rustc-link-lib=dylib=m",);
+    println!("cargo:rustc-link-lib=static=Init");
+    println!("cargo:rustc-link-lib=static=leanrt");
+    println!("cargo:rustc-link-lib=static=uv");
+    println!("cargo:rustc-link-lib=static=gmp");
+    println!("cargo:rustc-link-lib=static=c++");
+    println!("cargo:rustc-link-lib=static=c++abi");
+    println!("cargo:rustc-link-lib=dylib=m");
 
     let lean_include_directory = lake_environment.lean_include_directory();
     let lean_include_directory_str =

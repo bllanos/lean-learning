@@ -840,6 +840,7 @@ dependencies = [
  "cc",
  "elan",
  "elan-dist",
+ "glob",
 ]
 
 [[package]]
@@ -914,7 +915,8 @@ version = "0.1.0"
 name = "map-array-sys"
 version = "0.1.0"
 dependencies = [
- "bindgen",
+ "lean-build",
+ "lean-sys",
 ]
 
 [[package]]
