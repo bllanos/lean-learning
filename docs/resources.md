@@ -6,8 +6,8 @@ We found the following resources helpful. Each one is listed alongside the date 
 <!-- omit in toc -->
 ## Table of Contents
 
-- [Core Lean resources](#core-rust-programming-language-resources)
-- [Other Lean resources](#other-rust-programming-language-resources)
+- [Core Lean resources](#core-lean-resources)
+- [Other Lean resources](#other-lean-resources)
 - [Related systems](#related-systems)
 - [Software design](#software-design)
 - [Theory](#theory)
@@ -29,5 +29,5 @@ We found the following resources helpful. Each one is listed alongside the date 
 ### Theory
 
 1. (2024) [Category Theory for Programmers](https://github.com/hmemcpy/milewski-ctfp-pdf/releases), by Bartosz Milewski, compiled and edited by Igal Tabachnik
-2. (2025) Philip Wadler. 2015. Propositions as types. Commun. ACM 58, 12 (December 2015), 75–84. https://doi.org/10.1145/2699407
+2. (2025) Philip Wadler. 2015. Propositions as types. Commun. ACM 58, 12 (December 2015), 75–84. <https://doi.org/10.1145/2699407>
 3. (2025) [Software Foundations, Volume 1: Logical Foundations](https://softwarefoundations.cis.upenn.edu/lf-current/index.html), by Pierce et al., version 6.7.1 (January 13, 2025, Coq 8.19.2 or later)
