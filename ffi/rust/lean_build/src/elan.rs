@@ -6,7 +6,9 @@ use crate::elan_fork::elan::{
     Cfg as ElanCfg, Notification, OverrideReason, notify::NotificationLevel,
 };
 
-use crate::toolchain::LeanToolchainVersion;
+mod toolchain;
+
+use toolchain::LeanToolchainVersion;
 
 fn create_elan_cfg() -> Result<ElanCfg, Box<dyn Error>> {
     Ok(ElanCfg::from_env(Arc::new(
