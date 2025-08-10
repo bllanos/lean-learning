@@ -1,0 +1,143 @@
+use std::alloc::{GlobalAlloc, Layout};
+use std::error::Error;
+use std::ffi::{CStr, c_void};
+use std::slice;
+
+use lean_sys::{
+    lean_alloc_array, lean_array_cptr, lean_array_size, lean_box_uint32, lean_dec, lean_dec_ref,
+    lean_inc, lean_initialize_runtime_module, lean_io_mark_end_initialization, lean_io_mk_world,
+    lean_io_result_is_ok, lean_io_result_show_error, lean_object, lean_string_cstr,
+    lean_unbox_uint32, mi_aligned_alloc, mi_free_size_aligned, mi_realloc_aligned,
+    mi_zalloc_aligned,
+};
+use map_array_sys::{
+    Basic::{map_options_to_string, mk_map_options, my_map},
+    MapArray::initialize_MapArray,
+};
+
+struct MimallocAllocator {}
+
+#[global_allocator]
+static ALLOCATOR: MimallocAllocator = MimallocAllocator {};
+
+// Reference:
+// <https://github.com/purpleprotocol/mimalloc_rust/blob/000709797d05324e449739ab428180cbe1199712/src/lib.rs>
+unsafe impl GlobalAlloc for MimallocAllocator {
+    // Required trait methods
+
+    #[inline]
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        unsafe { mi_aligned_alloc(layout.align(), layout.size()) as *mut u8 }
+    }
+
+    #[inline]
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        unsafe {
+            mi_free_size_aligned(ptr as *mut c_void, layout.size(), layout.align());
+        }
+    }
+
+    // Provided trait methods that mimalloc also supports
+
+    #[inline]
+    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
+        unsafe { mi_zalloc_aligned(layout.size(), layout.align()) as *mut u8 }
+    }
+
+    #[inline]
+    unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
+        unsafe { mi_realloc_aligned(ptr as *mut c_void, new_size, layout.align()) as *mut u8 }
+    }
+}
+
+/// A test that uses Lean's allocator (assumed to be mimalloc) for dynamic
+/// memory allocation in Rust and exercises functions from the Lean `MapArray`
+/// module.
+#[test]
+fn map_array_custom_allocator() -> Result<(), Box<dyn Error>> {
+    unsafe {
+        // Lean initialization
+        // -------------------
+        lean_initialize_runtime_module();
+    }
+
+    // Lean module initialization
+    // --------------------------
+    let res: *mut lean_object;
+    // Use same default as for Lean executables
+    // See https://github.com/leanprover/lean4/blob/master/doc/dev/ffi.md#initialization
+    let builtin: u8 = 1;
+
+    unsafe {
+        res = initialize_MapArray(builtin, lean_io_mk_world());
+        if lean_io_result_is_ok(res) {
+            // This seems to be an alternative to `lean_dec()` that can be used when
+            // the value is known not to be a scalar.
+            lean_dec_ref(res);
+        } else {
+            lean_io_result_show_error(res);
+            lean_dec(res);
+            // do not access Lean declarations if initialization failed
+            return Err("Lean module initialization failed".into());
+        }
+        lean_io_mark_end_initialization();
+    }
+
+    // Program logic
+    // -------------
+    unsafe {
+        let addend: u32 = 2;
+        let multiplicand: u32 = 3;
+
+        let map_options: *mut lean_object = mk_map_options(addend, multiplicand);
+        // Avoid having `map_options_to_string()` destroy `map_options`
+        lean_inc(map_options);
+        let map_options_lean_str: *mut lean_object = map_options_to_string(map_options);
+        let map_options_cstr = lean_string_cstr(map_options_lean_str);
+        let map_options_str = CStr::from_ptr(map_options_cstr);
+
+        assert_eq!(
+            map_options_str.to_str()?,
+            "{ addend := 2, multiplicand := 3 }"
+        );
+
+        lean_dec_ref(map_options_lean_str);
+
+        // Scalar arrays don't seem to be well-supported yet,
+        // otherwise it would be nice to use one.
+        // lean_object* arr = lean_alloc_sarray(unsigned elem_size, size_t size, size_t capacity);
+
+        let arr_size: usize = 6;
+
+        let arr: *mut lean_object = lean_alloc_array(arr_size, arr_size);
+        let arr_data: *mut *mut lean_object = lean_array_cptr(arr);
+
+        for i in 0..arr_size {
+            let value: u8 = (i * 5).try_into()?;
+            // There are no functions for boxing `uint8_t` values specifically, so use
+            // `lean_box_uint32()`
+            *(arr_data.add(i)) = lean_box_uint32(value.into());
+        }
+
+        // Note: `my_map()` will call `lean_dec()` on all arguments.
+        let arr_out: *mut lean_object = my_map(map_options, arr);
+        let arr_data = lean_array_cptr(arr_out);
+        let arr_size_from_lean = lean_array_size(arr_out);
+
+        assert_eq!(arr_size_from_lean, arr_size);
+
+        let lean_array_slice = slice::from_raw_parts(arr_data, arr_size_from_lean);
+
+        for (object, i) in lean_array_slice
+            .iter()
+            .zip([6_u8, 21, 36, 51, 66, 81].iter())
+        {
+            let value: u8 = lean_unbox_uint32(*object).try_into()?;
+            assert_eq!(value, *i);
+        }
+
+        lean_dec_ref(arr_out);
+    }
+
+    Ok(())
+}
