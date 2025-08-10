@@ -2,18 +2,15 @@ use std::error::Error;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::str::FromStr;
 
 use glob::MatchOptions;
-
-use crate::toolchain::LeanToolchainVersion;
 
 fn display_slice(slice: &[u8]) -> &str {
     str::from_utf8(slice).unwrap_or("[Non-UTF8]")
 }
 
 pub struct LakeEnv {
-    elan_toolchain: LeanToolchainVersion,
+    elan_toolchain: String,
     lean_githash: String,
     lean_sysroot: PathBuf,
 }
@@ -25,12 +22,8 @@ impl LakeEnv {
 
     pub fn from_posix_env(env: &[u8]) -> Result<Self, Box<dyn Error>> {
         let tuple = env.split(|c| c.is_ascii_control()).try_fold(
-            (
-                None,
-                String::new(),
-                PathBuf::new(),
-            ),
-            |accumulator, slice| -> Result<(Option<LeanToolchainVersion>, String, PathBuf), Box<dyn Error>> {
+            (String::new(), String::new(), PathBuf::new()),
+            |accumulator, slice| -> Result<(String, String, PathBuf), Box<dyn Error>> {
                 let mut parts = slice.splitn(2, |c| *c == b'=');
                 let var = parts.next().ok_or_else(|| {
                     format!(
@@ -45,12 +38,8 @@ impl LakeEnv {
                         match var_str {
                             Self::ELAN_TOOLCHAIN => {
                                 let value_str = str::from_utf8(value)?;
-                                if accumulator.0.is_none() {
-                                    Ok((
-                                        Some(FromStr::from_str(value_str)?),
-                                        accumulator.1,
-                                        accumulator.2,
-                                    ))
+                                if accumulator.0.is_empty() {
+                                    Ok((String::from(value_str), accumulator.1, accumulator.2))
                                 } else {
                                     Err(format!(
                                         "duplicate {} variable in environment string",
@@ -62,11 +51,7 @@ impl LakeEnv {
                             Self::LEAN_GITHASH => {
                                 let value_str = str::from_utf8(value)?;
                                 if accumulator.1.is_empty() {
-                                    Ok((
-                                        accumulator.0,
-                                        String::from(value_str),
-                                        accumulator.2,
-                                    ))
+                                    Ok((accumulator.0, String::from(value_str), accumulator.2))
                                 } else {
                                     Err(format!(
                                         "duplicate {} variable in environment string",
@@ -78,11 +63,7 @@ impl LakeEnv {
                             Self::LEAN_SYSROOT => {
                                 let value_str = str::from_utf8(value)?;
                                 if accumulator.2.as_os_str().is_empty() {
-                                    Ok((
-                                        accumulator.0,
-                                        accumulator.1,
-                                        PathBuf::from(value_str),
-                                    ))
+                                    Ok((accumulator.0, accumulator.1, PathBuf::from(value_str)))
                                 } else {
                                     Err(format!(
                                         "duplicate {} variable in environment string",
@@ -97,33 +78,30 @@ impl LakeEnv {
                 }
             },
         )?;
-        match tuple.0 {
-            Some(elan_toolchain) => {
-                if tuple.1.is_empty() {
-                    Err(format!(
-                        "missing {} variable in environment string",
-                        Self::LEAN_GITHASH
-                    )
-                    .into())
-                } else if tuple.2.as_os_str().is_empty() {
-                    Err(format!(
-                        "missing {} variable in environment string",
-                        Self::LEAN_SYSROOT
-                    )
-                    .into())
-                } else {
-                    Ok(Self {
-                        elan_toolchain,
-                        lean_githash: tuple.1,
-                        lean_sysroot: tuple.2,
-                    })
-                }
-            }
-            None => Err(format!(
+        if tuple.0.is_empty() {
+            Err(format!(
                 "missing {} variable in environment string",
                 Self::ELAN_TOOLCHAIN
             )
-            .into()),
+            .into())
+        } else if tuple.1.is_empty() {
+            Err(format!(
+                "missing {} variable in environment string",
+                Self::LEAN_GITHASH
+            )
+            .into())
+        } else if tuple.2.as_os_str().is_empty() {
+            Err(format!(
+                "missing {} variable in environment string",
+                Self::LEAN_SYSROOT
+            )
+            .into())
+        } else {
+            Ok(Self {
+                elan_toolchain: tuple.0,
+                lean_githash: tuple.1,
+                lean_sysroot: tuple.2,
+            })
         }
     }
 
@@ -202,7 +180,7 @@ fn run_lake_command_and_retrieve_stdout<'a>(
         Ok(output.stdout)
     } else {
         Err(format!(
-            "Lake invocation with arguments {args:?} failed with status {}:\n\tstdout:\n{}\n\tstderr:\n{}",
+            "Lake invocation with arguments {args:?} failed with status {}, stdout:{}, stderr: {}",
             output.status,
             display_slice(&output.stdout),
             display_slice(&output.stderr),

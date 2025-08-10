@@ -9,8 +9,10 @@ edition = "2024"
 [workspace.dependencies]
 bindgen = "0.71.1"
 cc = "1.2.26"
-# The latest version (`v4.1.2`) does not build, as described at
-# <https://github.com/leanprover/elan/issues/168>
-elan = { git = "https://github.com/leanprover/elan.git", tag = "v4.0.0" }
-elan-dist = { git = "https://github.com/leanprover/elan.git", tag = "v4.0.0" }
+dirs = "6.0.0"
 glob = "0.3.2"
+itertools = "0.14.0"
+regex = "1.11.1"
+semver = "1.0.26"
+thiserror = "2.0.12"
+toml = "0.9.5"

@@ -2,24 +2,17 @@ use std::error::Error;
 use std::path::Path;
 use std::sync::Arc;
 
-use elan::{Cfg as ElanCfg, Notification, OverrideReason, notify::NotificationLevel};
+use crate::elan_fork::elan::{
+    Cfg as ElanCfg, Notification, OverrideReason, notify::NotificationLevel,
+};
 
 use crate::toolchain::LeanToolchainVersion;
 
 fn create_elan_cfg() -> Result<ElanCfg, Box<dyn Error>> {
     Ok(ElanCfg::from_env(Arc::new(
         move |n: Notification<'_>| match n.level() {
-            NotificationLevel::Verbose => {
-                println!("{n}");
-            }
-            NotificationLevel::Info => {
-                println!("{n}");
-            }
             NotificationLevel::Warn => {
                 println!("cargo:warning={n}");
-            }
-            NotificationLevel::Error => {
-                println!("cargo:error={n}");
             }
         },
     ))?)
@@ -77,9 +70,9 @@ pub fn rerun_build_if_lean_version_changes<P: AsRef<Path>>(
 
     if lean_toolchain_version.is_floating_version() {
         let elan_toolchain_directory = &elan_cfg.toolchains_dir;
+        println!("cargo:warning=Lean toolchain: {lean_toolchain_version}");
         println!(
-            "cargo:warning=specifying \"{}\" as the Lean toolchain version will slow down Cargo builds because the entire Elan toolchains directory (\"{}\") must be monitored for changes to detect a Lean toolchain version change",
-            lean_toolchain_version,
+            "cargo:warning=specifying a floating version of the Lean toolchain (i.e. a channel) will slow down Cargo builds because the entire Elan toolchains directory (\"{}\") must be monitored for changes to detect a change in the latest Lean toolchain version",
             elan_toolchain_directory.display()
         );
         println!(
