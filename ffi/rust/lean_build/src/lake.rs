@@ -13,18 +13,34 @@ fn display_slice(slice: &[u8]) -> &str {
     str::from_utf8(slice).unwrap_or("[Non-UTF8]")
 }
 
-pub struct LakeLibraryDescription<'a, P: AsRef<Path>, Q: AsRef<Path> = PathBuf> {
+pub struct LakeLibraryDescription<
+    'a,
+    P: AsRef<Path>,
+    Q: AsRef<Path> = PathBuf,
+    R: AsRef<Path> = PathBuf,
+> {
     pub lake_package_path: P,
     pub target_name: &'a str,
     /// The directory containing the library's Lean source files, used for
     /// change detection. Defaults to `lake_package_path`
     pub source_directory: Option<Q>,
+    /// The directory containing the library's build C files, which is useful in
+    /// cases where the Lake package defines multiple targets. Defaults to
+    /// `lake_package_path`
+    pub c_files_directory: Option<R>,
 }
 
-impl<'a, P: AsRef<Path>, Q: AsRef<Path>> LakeLibraryDescription<'a, P, Q> {
+impl<'a, P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>> LakeLibraryDescription<'a, P, Q, R> {
     fn get_source_directory(&self) -> &Path {
         match self.source_directory.as_ref() {
             Some(source_directory) => source_directory.as_ref(),
+            None => self.lake_package_path.as_ref(),
+        }
+    }
+
+    fn get_c_files_directory(&self) -> &Path {
+        match self.c_files_directory.as_ref() {
+            Some(c_files_directory) => c_files_directory.as_ref(),
             None => self.lake_package_path.as_ref(),
         }
     }
@@ -56,8 +72,8 @@ fn get_lake_target_path_from_lake_query_output(
     Ok(Path::new(output_str).to_path_buf())
 }
 
-fn rerun_build_if_lake_package_changes<P: AsRef<Path>, Q: AsRef<Path>>(
-    lake_library_description: &LakeLibraryDescription<P, Q>,
+fn rerun_build_if_lake_package_changes<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
+    lake_library_description: &LakeLibraryDescription<P, Q, R>,
 ) {
     println!(
         "cargo:rerun-if-changed={}",
@@ -65,8 +81,8 @@ fn rerun_build_if_lake_package_changes<P: AsRef<Path>, Q: AsRef<Path>>(
     );
 }
 
-pub fn build_and_link_static_lean_library<P: AsRef<Path>, Q: AsRef<Path>>(
-    lake_library_description: &LakeLibraryDescription<P, Q>,
+pub fn build_and_link_static_lean_library<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
+    lake_library_description: &LakeLibraryDescription<P, Q, R>,
 ) -> Result<(), Box<dyn Error>> {
     let lake_package_path = lake_library_description.lake_package_path.as_ref();
     let build_target = format!("@/{}:static", lake_library_description.target_name);

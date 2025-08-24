@@ -21,11 +21,13 @@ fn get_lake_package_path() -> Result<PathBuf, Box<dyn Error>> {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let lake_package_path = get_lake_package_path()?;
+    let c_files_directory = lake_package_path.join(".lake").join("build").join("ir");
     lean_build::library_build::build(
         &LakeLibraryDescription {
             lake_package_path,
             target_name: "MapArray",
             source_directory: None::<PathBuf>,
+            c_files_directory: Some(c_files_directory),
         },
         Default::default(),
     )

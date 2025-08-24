@@ -10,7 +10,7 @@ use lean_sys::{
     lean_unbox_uint32, mi_aligned_alloc, mi_free_size_aligned, mi_realloc_aligned,
     mi_zalloc_aligned,
 };
-use map_array_sys::lake::build::ir::{
+use map_array_sys::{
     MapArray::Basic_c::{map_options_to_string, mk_map_options, my_map},
     MapArray_c::initialize_MapArray,
 };

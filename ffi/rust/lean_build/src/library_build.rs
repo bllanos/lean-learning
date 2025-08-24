@@ -39,8 +39,8 @@ pub enum CallbackError {
     Bindgen { path: PathBuf, source: BindgenError },
 }
 
-pub fn build<P: AsRef<Path>, Q: AsRef<Path>>(
-    lake_library_description: &LakeLibraryDescription<P, Q>,
+pub fn build<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
+    lake_library_description: &LakeLibraryDescription<P, Q, R>,
     output_files_config: OutputFilesConfig,
 ) -> Result<(), Box<dyn Error>> {
     let lake_environment = lake::get_lake_environment(&lake_library_description.lake_package_path)?;
@@ -61,7 +61,7 @@ pub fn build<P: AsRef<Path>, Q: AsRef<Path>>(
 
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
 
-    let lean_c_files_traverser = lake::find_c_files(&lake_library_description.lake_package_path)?;
+    let lean_c_files_traverser = lake::find_c_files(&lake_library_description)?;
 
     let bindings_out_filename = out_dir.join(output_files_config.library_bindings_filename);
     let mut bindings_out_file = File::create(&bindings_out_filename).map_err(|err| {

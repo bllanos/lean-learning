@@ -4,6 +4,8 @@ use std::ffi::OsStr;
 use std::fs::DirEntry;
 use std::path::Path;
 
+use super::LakeLibraryDescription;
+
 struct CFile {
     module_name: String,
     path: String,
@@ -276,8 +278,8 @@ impl LakeBuildOutput {
     }
 }
 
-pub fn find_c_files<P: AsRef<Path>>(
-    base_path: P,
+pub fn find_c_files<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
+    lake_library_description: &LakeLibraryDescription<P, Q, R>,
 ) -> Result<impl LakeBuildOutputTraverser, Box<dyn Error>> {
-    LakeBuildOutput::traverse_path(base_path)
+    LakeBuildOutput::traverse_path(lake_library_description.get_c_files_directory())
 }
