@@ -7,7 +7,7 @@ mod env;
 mod package;
 
 pub use env::get_lake_environment;
-pub use package::find_c_files;
+pub use package::{LakeBuildOutputTraversalEvent, LakeBuildOutputTraverser, find_c_files};
 
 fn display_slice(slice: &[u8]) -> &str {
     str::from_utf8(slice).unwrap_or("[Non-UTF8]")

@@ -1,5 +1,7 @@
 use std::env;
 use std::error::Error;
+use std::fs::File;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use bindgen::builder;
@@ -26,14 +28,6 @@ pub struct OutputFilesConfig<'a> {
     ///
     /// ```ignore
     /// #![no_std]
-    /// #![allow(clippy::missing_safety_doc)]
-    /// // These warnings will hopefully be resolved in a future version of the
-    /// // `bindgen` crate
-    /// #![allow(unsafe_op_in_unsafe_fn)]
-    /// #![allow(non_upper_case_globals)]
-    /// #![allow(non_camel_case_types)]
-    /// #![allow(clippy::ptr_offset_with_cast)]
-    /// #![allow(clippy::useless_transmute)]
     /// include!(env!("LEAN_SYS_ROOT_MODULE_INCLUDE"));
     /// ```
     pub lean_sys_root_module_filename: &'a str,
@@ -120,12 +114,27 @@ pub fn build<P: AsRef<Path>>(
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .generate()?;
 
-    let bindings_out_file = out_dir.join(output_files_config.lean_bindings_filename);
-    bindings.write_to_file(&bindings_out_file)?;
+    let bindings_out_filename = out_dir.join(output_files_config.lean_bindings_filename);
+    let mut bindings_out_file = File::create(&bindings_out_filename).map_err(|err| {
+        format!(
+            "failed to create Lean runtime Rust bindings file \"{}\": {}",
+            bindings_out_filename.display(),
+            err
+        )
+    })?;
+    // Create a module to contain warning allow directives
+    writeln!(&mut bindings_out_file, "mod lean_sys {{")?;
+    crate::write_warning_allow_directives(&mut bindings_out_file)?;
+    bindings.write(Box::new(&bindings_out_file))?;
+    writeln!(
+        &mut bindings_out_file,
+        "}}
+pub use lean_sys::*;"
+    )?;
 
     println!(
         "cargo::rustc-env=LEAN_RUST_BINDINGS={}",
-        bindings_out_file.display()
+        bindings_out_filename.display()
     );
 
     cc::Build::new()

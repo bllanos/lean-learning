@@ -170,7 +170,6 @@ dependencies = [
  "bindgen",
  "cc",
  "dirs",
- "glob",
  "itertools 0.14.0",
  "regex",
  "semver",

@@ -7,7 +7,6 @@ edition.workspace = true
 bindgen = { workspace = true }
 cc = { workspace = true }
 dirs = { workspace = true }
-glob = { workspace = true }
 itertools = { workspace = true }
 regex = { workspace = true }
 semver = { workspace = true }
