@@ -278,8 +278,8 @@ impl LakeBuildOutput {
     }
 }
 
-pub fn find_c_files<P: AsRef<Path>, Q: AsRef<Path>, R: AsRef<Path>>(
-    lake_library_description: &LakeLibraryDescription<P, Q, R>,
+pub fn find_c_files<P: AsRef<Path>, Q: AsRef<OsStr>, R: AsRef<Path>, S: AsRef<Path>>(
+    lake_library_description: &LakeLibraryDescription<P, Q, R, S>,
 ) -> Result<impl LakeBuildOutputTraverser, Box<dyn Error>> {
     LakeBuildOutput::traverse_path(lake_library_description.get_c_files_directory())
 }

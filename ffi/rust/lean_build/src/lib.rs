@@ -7,6 +7,8 @@ pub mod library_build;
 pub mod runtime_build;
 mod rust;
 
+pub use lake::LakePackageDescription;
+
 fn write_warning_allow_directives<W: Write>(mut writer: W) -> std::io::Result<()> {
     writeln!(
         writer,
