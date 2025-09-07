@@ -59,7 +59,7 @@ impl<R: RuntimeComponents, M: Modules> ModulesInitializer<R, M> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct LeanIoError(pub CString);
 
 impl fmt::Display for LeanIoError {

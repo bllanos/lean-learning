@@ -11,7 +11,7 @@ use module::ModulesInitializer;
 pub use alloc::MimallocAllocator;
 pub use module::{LeanIoError, NoModules};
 pub use runtime::{
-    LeanPackage, LeanPackageComponent, Minimal, Runtime, run_in_lean_runtime,
+    LeanError, LeanPackage, LeanPackageComponent, Minimal, Runtime, run_in_lean_runtime,
     run_in_lean_runtime_with_default_error_handler,
 };
 pub use thread::{

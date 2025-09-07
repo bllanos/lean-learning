@@ -92,7 +92,7 @@ impl<R: RuntimeComponents, M: Modules> Runtime<R, M> {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Eq, PartialEq)]
 pub enum LeanError<ModulesInitializationError: Error, RunError: Error> {
     #[error("Lean modules initialization error")]
     ModulesInitialization(#[source] ModulesInitializationError),
