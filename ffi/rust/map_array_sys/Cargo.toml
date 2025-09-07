@@ -8,3 +8,6 @@ lean-sys = { path = "../lean_sys" }
 
 [build-dependencies]
 lean-build = { path = "../lean_build" }
+
+[dev-dependencies]
+lean = { path = "../lean" }

@@ -181,6 +181,7 @@ dependencies = [
 name = "lean-sys"
 version = "0.1.0"
 dependencies = [
+ "lean",
  "lean-build",
 ]
 
@@ -224,6 +225,7 @@ version = "0.1.0"
 name = "map-array-sys"
 version = "0.1.0"
 dependencies = [
+ "lean",
  "lean-build",
  "lean-sys",
 ]

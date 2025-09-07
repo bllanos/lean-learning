@@ -5,3 +5,6 @@ edition.workspace = true
 
 [build-dependencies]
 lean-build = { path = "../lean_build" }
+
+[dev-dependencies]
+lean = { path = "../lean" }
