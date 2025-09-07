@@ -10,4 +10,5 @@ unsafe extern "C" {
     pub unsafe fn lean_initialize();
     pub unsafe fn lean_initialize_thread();
     pub unsafe fn lean_finalize_thread();
+    pub unsafe fn lean_io_error_to_string(err: lean_obj_arg) -> lean_obj_res;
 }

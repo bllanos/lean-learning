@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-const LEAN_SYS_ROOT_MODULE: &[u8; 487] = include_bytes!("lean_sys_root_module.rs");
+const LEAN_SYS_ROOT_MODULE: &[u8; 565] = include_bytes!("lean_sys_root_module.rs");
 
 pub fn create_lean_sys_root_module<P: AsRef<Path>>(
     lean_sys_root_module_path: P,

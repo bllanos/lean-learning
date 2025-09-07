@@ -2,9 +2,16 @@ use std::thread::{Builder, JoinHandle, Scope, ScopedJoinHandle};
 
 use lean_sys::{lean_finalize_thread, lean_initialize_thread};
 
-use crate::{Runtime, RuntimeComponents};
+use crate::{Modules, Runtime, RuntimeComponents};
 
-fn run_lean_thread<C: RuntimeComponents, T, Run: FnOnce(&Runtime<C>) -> T>(run: Run) -> T {
+fn run_lean_thread<
+    R: RuntimeComponents,
+    M: Modules,
+    T,
+    Run: FnOnce(&Runtime<R, M>) -> T,
+>(
+    run: Run,
+) -> T {
     unsafe {
         lean_initialize_thread();
     }
@@ -17,22 +24,24 @@ fn run_lean_thread<C: RuntimeComponents, T, Run: FnOnce(&Runtime<C>) -> T>(run: 
 }
 
 pub fn run_in_thread_with_lean_runtime<
-    C: RuntimeComponents,
+    R: RuntimeComponents,
+    M: Modules,
     T: Send + 'static,
-    Run: FnOnce(&Runtime<C>) -> T + Send + 'static,
+    Run: FnOnce(&Runtime<R, M>) -> T + Send + 'static,
 >(
-    _runtime: &Runtime<C>,
+    _runtime: &Runtime<R, M>,
     run: Run,
 ) -> JoinHandle<T> {
     std::thread::spawn(move || run_lean_thread(run))
 }
 
 pub fn run_in_custom_thread_with_lean_runtime<
-    C: RuntimeComponents,
+    R: RuntimeComponents,
+    M: Modules,
     T: Send + 'static,
-    Run: FnOnce(&Runtime<C>) -> T + Send + 'static,
+    Run: FnOnce(&Runtime<R, M>) -> T + Send + 'static,
 >(
-    _runtime: &Runtime<C>,
+    _runtime: &Runtime<R, M>,
     builder: Builder,
     run: Run,
 ) -> std::io::Result<JoinHandle<T>> {
@@ -42,11 +51,12 @@ pub fn run_in_custom_thread_with_lean_runtime<
 pub fn run_in_custom_scoped_thread_with_lean_runtime<
     'scope,
     'env,
-    C: RuntimeComponents,
+    R: RuntimeComponents,
+    M: Modules,
     T: Send + 'scope,
-    Run: FnOnce(&Runtime<C>) -> T + Send + 'scope,
+    Run: FnOnce(&Runtime<R, M>) -> T + Send + 'scope,
 >(
-    _runtime: &Runtime<C>,
+    _runtime: &Runtime<R, M>,
     builder: Builder,
     scope: &'scope Scope<'scope, 'env>,
     run: Run,

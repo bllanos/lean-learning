@@ -161,6 +161,7 @@ name = "lean"
 version = "0.1.0"
 dependencies = [
  "lean-sys",
+ "thiserror",
 ]
 
 [[package]]

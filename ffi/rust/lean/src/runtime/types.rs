@@ -1,10 +1,13 @@
+use std::error::Error;
 use std::marker::PhantomData;
 
-use lean_sys::{lean_initialize, lean_initialize_runtime_module, lean_io_mark_end_initialization};
+use lean_sys::{
+    lean_initialize, lean_initialize_runtime_module, lean_io_mark_end_initialization, lean_obj_res,
+};
 
-use crate::RuntimeComponents;
+use crate::{Modules, ModulesInitializer, RuntimeComponents, util::NonSendNonSync};
 
-pub struct Minimal {}
+pub enum Minimal {}
 
 unsafe impl RuntimeComponents for Minimal {
     unsafe fn initialize_runtime() {
@@ -12,9 +15,15 @@ unsafe impl RuntimeComponents for Minimal {
             lean_initialize_runtime_module();
         }
     }
+
+    unsafe fn mark_end_initialization() {
+        unsafe {
+            lean_io_mark_end_initialization();
+        }
+    }
 }
 
-pub struct LeanPackage {}
+pub enum LeanPackage {}
 
 unsafe impl RuntimeComponents for LeanPackage {
     unsafe fn initialize_runtime() {
@@ -22,52 +31,71 @@ unsafe impl RuntimeComponents for LeanPackage {
             lean_initialize();
         }
     }
+
+    unsafe fn mark_end_initialization() {
+        unsafe {
+            lean_io_mark_end_initialization();
+        }
+    }
 }
 
-// Reference:
-// <https://stackoverflow.com/questions/62713667/how-to-implement-send-or-sync-for-a-type>
-// This is a workaround until [negative
-// impls](https://github.com/rust-lang/rust/issues/68318) are stable.
-type NonSendNonSync = PhantomData<*const ()>;
+/// A trait to be implemented by types that initialize the Lean package
+///
+/// # Safety
+///
+/// Implementations of this trait must guarantee that the Lean package is
+/// properly initialized.
+pub unsafe trait LeanPackageComponent: RuntimeComponents {}
 
-pub struct InitializingRuntime<T: RuntimeComponents> {
-    runtime_components: PhantomData<T>,
+unsafe impl LeanPackageComponent for LeanPackage {}
+
+pub struct RuntimeInitializer<R: RuntimeComponents, M: Modules> {
+    runtime_components: PhantomData<R>,
+    modules_initializer: PhantomData<M>,
     non_send_non_sync: NonSendNonSync,
 }
 
-impl<T: RuntimeComponents> InitializingRuntime<T> {
+impl<R: RuntimeComponents, M: Modules> RuntimeInitializer<R, M> {
     fn initialize_fields() -> Self {
         Self {
             runtime_components: PhantomData,
+            modules_initializer: PhantomData,
             non_send_non_sync: PhantomData,
         }
     }
 
-    pub(super) fn new() -> Self {
+    pub fn new() -> Self {
         unsafe {
-            T::initialize_runtime();
+            R::initialize_runtime();
         }
         Self::initialize_fields()
     }
 
-    pub(super) fn finish_initialization(self) -> Runtime<T> {
-        unsafe {
-            lean_io_mark_end_initialization();
-        }
-        Runtime::new()
+    pub fn initialize_modules(self) -> Result<ModulesInitializer<R, M>, lean_obj_res> {
+        ModulesInitializer::new()
     }
 }
 
-pub struct Runtime<T: RuntimeComponents> {
-    runtime_components: PhantomData<T>,
+pub struct Runtime<R: RuntimeComponents, M: Modules> {
+    runtime_components: PhantomData<R>,
+    modules_initializer: PhantomData<M>,
     non_send_non_sync: NonSendNonSync,
 }
 
-impl<T: RuntimeComponents> Runtime<T> {
+impl<R: RuntimeComponents, M: Modules> Runtime<R, M> {
     pub(crate) fn new() -> Self {
         Self {
             runtime_components: PhantomData,
+            modules_initializer: PhantomData,
             non_send_non_sync: PhantomData,
         }
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum LeanError<ModulesInitializationError: Error, RunError: Error> {
+    #[error("Lean modules initialization error")]
+    ModulesInitialization(#[source] ModulesInitializationError),
+    #[error(transparent)]
+    Run(#[from] RunError),
 }

@@ -26,9 +26,7 @@ int main() {
   uint8_t builtin = 1;
   res = initialize_MapArray(builtin, lean_io_mk_world());
   if (lean_io_result_is_ok(res)) {
-      // This seems to be an alternative to `lean_dec()` that can be used when
-      // the value is known not to be a scalar.
-      lean_dec_ref(res);
+      lean_dec(res);
   } else {
       lean_io_result_show_error(res);
       lean_dec(res);
@@ -49,6 +47,8 @@ int main() {
   // Strings in Lean are null-terminated
   char const * map_options_cstr = lean_string_cstr(map_options_lean_str);
   printf("MapOptions instance: %s\n", map_options_cstr);
+  // This seems to be an alternative to `lean_dec()` that can be used when
+  // the value is known not to be a scalar.
   lean_dec_ref(map_options_lean_str);
 
   // Scalar arrays don't seem to be well-supported yet,
