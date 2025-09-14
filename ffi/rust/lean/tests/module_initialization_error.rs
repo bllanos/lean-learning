@@ -3,7 +3,7 @@ use std::error::Error;
 use std::ffi::CString;
 use std::str::FromStr;
 
-use lean::{LeanError, LeanIoError, MimallocAllocator, Minimal, Modules, Runtime};
+use lean::{LeanError, LeanIoError, MimallocAllocator, MinimalComponents, Modules, Runtime};
 use lean_sys::{
     lean_io_result_mk_error, lean_mk_io_user_error, lean_mk_string, lean_obj_arg, lean_obj_res,
 };
@@ -33,7 +33,7 @@ unsafe impl Modules for TestModule {
 #[test]
 fn module_initialization_error() {
     let error = lean::run_in_lean_runtime_with_default_error_handler(
-        |_runtime: &Runtime<Minimal, TestModule>| -> Result<(), Infallible> { unreachable!() },
+        |_runtime: &Runtime<MinimalComponents, TestModule>| -> Result<(), Infallible> { unreachable!() },
     )
     .unwrap_err();
 

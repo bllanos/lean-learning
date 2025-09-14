@@ -3,7 +3,7 @@ use std::ffi::{CStr, CString};
 use std::str::FromStr;
 use std::thread;
 
-use lean::{MimallocAllocator, Minimal, NoModules, Runtime};
+use lean::{MimallocAllocator, MinimalComponents, NoModules, Runtime};
 use lean_sys::{lean_dec_ref, lean_mk_string, lean_obj_res, lean_string_cstr, lean_string_push};
 
 #[global_allocator]
@@ -12,7 +12,7 @@ static ALLOCATOR: MimallocAllocator = MimallocAllocator {};
 #[test]
 fn make_string() {
     lean::run_in_lean_runtime_with_default_error_handler(
-        |runtime: &Runtime<Minimal, NoModules>| {
+        |runtime: &Runtime<MinimalComponents, NoModules>| {
             let initial_string = String::from("Hello, world");
             let new_char = b'!';
             let initial_cstring = CString::from_str(&initial_string).unwrap();

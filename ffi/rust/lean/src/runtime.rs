@@ -7,7 +7,8 @@ mod types;
 
 use crate::{LeanIoError, Modules, RuntimeComponents};
 pub use types::{
-    LeanError, LeanPackage, LeanPackageComponent, Minimal, Runtime, RuntimeInitializer,
+    LeanError, LeanPackage, LeanPackageComponents, Minimal, MinimalComponents, Runtime,
+    RuntimeInitializer,
 };
 
 static ONCE_INITIALIZATION_GUARD: Once = Once::new();
@@ -43,7 +44,7 @@ pub fn run_in_lean_runtime<
             }
         };
     });
-    result.unwrap()
+    result.expect("attempt to reuse the Lean runtime. The runtime is single-use to eliminate overhead from repeatedly checking whether it has already been initialized")
 }
 
 pub fn run_in_lean_runtime_with_default_error_handler<

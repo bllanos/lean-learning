@@ -11,8 +11,8 @@ use module::ModulesInitializer;
 pub use alloc::MimallocAllocator;
 pub use module::{LeanIoError, NoModules};
 pub use runtime::{
-    LeanError, LeanPackage, LeanPackageComponent, Minimal, Runtime, run_in_lean_runtime,
-    run_in_lean_runtime_with_default_error_handler,
+    LeanError, LeanPackage, LeanPackageComponents, Minimal, MinimalComponents, Runtime,
+    run_in_lean_runtime, run_in_lean_runtime_with_default_error_handler,
 };
 pub use thread::{
     run_in_custom_scoped_thread_with_lean_runtime, run_in_custom_thread_with_lean_runtime,
@@ -66,7 +66,7 @@ pub unsafe trait Modules {
     /// Initialize all required Lean modules
     ///
     /// It is not necessary for implementors to initialize the `Lean` module, as
-    /// this can be done by using [`LeanPackage`], which implements
+    /// this can be done by using [`LeanPackageComponents`], which implements
     /// [`RuntimeComponents`].
     ///
     /// The signature of this function is that of a Lean module initializer. See

@@ -7,9 +7,9 @@ use lean_sys::{
 
 use crate::{Modules, ModulesInitializer, RuntimeComponents, util::NonSendNonSync};
 
-pub enum Minimal {}
+pub enum MinimalComponents {}
 
-unsafe impl RuntimeComponents for Minimal {
+unsafe impl RuntimeComponents for MinimalComponents {
     unsafe fn initialize_runtime() {
         unsafe {
             lean_initialize_runtime_module();
@@ -23,9 +23,19 @@ unsafe impl RuntimeComponents for Minimal {
     }
 }
 
-pub enum LeanPackage {}
+/// A trait implemented by types that initialize the standard Lean runtime
+///
+/// # Safety
+///
+/// Implementations of this trait must guarantee that the Lean runtime is
+/// properly initialized.
+pub unsafe trait Minimal: RuntimeComponents {}
 
-unsafe impl RuntimeComponents for LeanPackage {
+unsafe impl Minimal for MinimalComponents {}
+
+pub enum LeanPackageComponents {}
+
+unsafe impl RuntimeComponents for LeanPackageComponents {
     unsafe fn initialize_runtime() {
         unsafe {
             lean_initialize();
@@ -39,15 +49,17 @@ unsafe impl RuntimeComponents for LeanPackage {
     }
 }
 
-/// A trait to be implemented by types that initialize the Lean package
+unsafe impl Minimal for LeanPackageComponents {}
+
+/// A trait implemented by types that initialize the Lean package
 ///
 /// # Safety
 ///
 /// Implementations of this trait must guarantee that the Lean package is
 /// properly initialized.
-pub unsafe trait LeanPackageComponent: RuntimeComponents {}
+pub unsafe trait LeanPackage: Minimal {}
 
-unsafe impl LeanPackageComponent for LeanPackage {}
+unsafe impl LeanPackage for LeanPackageComponents {}
 
 pub struct RuntimeInitializer<R: RuntimeComponents, M: Modules> {
     runtime_components: PhantomData<R>,
