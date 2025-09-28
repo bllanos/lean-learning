@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 use std::convert::Infallible;
 
 use lean::{MimallocAllocator, MinimalComponents, NoModules, Runtime};

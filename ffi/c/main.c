@@ -51,10 +51,6 @@ int main() {
   // the value is known not to be a scalar.
   lean_dec_ref(map_options_lean_str);
 
-  // Scalar arrays don't seem to be well-supported yet,
-  // otherwise it would be nice to use one.
-  // lean_object* arr = lean_alloc_sarray(unsigned elem_size, size_t size, size_t capacity);
-
   size_t arr_size = 6;
   lean_object* arr = lean_alloc_array(arr_size, arr_size);
   lean_object ** arr_data = lean_array_cptr(arr);
@@ -77,7 +73,7 @@ int main() {
 
   printf("Output array: [ ");
   for(size_t i = 0; i < arr_size; ++i) {
-    uint32_t value = lean_unbox_uint32(*(arr_data + i));
+    int32_t value = (int32_t) lean_unbox_uint32(*(arr_data + i));
     printf("%d, ", value);
   }
   printf("]\n");

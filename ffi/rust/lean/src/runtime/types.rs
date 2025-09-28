@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::marker::PhantomData;
 
 use lean_sys::{
@@ -102,12 +101,4 @@ impl<R: RuntimeComponents, M: Modules> Runtime<R, M> {
             non_send_non_sync: PhantomData,
         }
     }
-}
-
-#[derive(thiserror::Error, Debug, Eq, PartialEq)]
-pub enum LeanError<ModulesInitializationError: Error, RunError: Error> {
-    #[error("Lean modules initialization error")]
-    ModulesInitialization(#[source] ModulesInitializationError),
-    #[error(transparent)]
-    Run(#[from] RunError),
 }

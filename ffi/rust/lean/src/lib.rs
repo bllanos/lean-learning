@@ -1,6 +1,8 @@
 pub use lean_sys::{ELAN_TOOLCHAIN, LEAN_GITHASH, lean_obj_arg, lean_obj_res};
 
 mod alloc;
+mod error;
+pub mod lean_types;
 mod module;
 mod runtime;
 mod thread;
@@ -9,10 +11,11 @@ mod util;
 use module::ModulesInitializer;
 
 pub use alloc::MimallocAllocator;
-pub use module::{LeanIoError, NoModules};
+pub use error::{LeanError, LeanIoError};
+pub use module::NoModules;
 pub use runtime::{
-    LeanError, LeanPackage, LeanPackageComponents, Minimal, MinimalComponents, Runtime,
-    run_in_lean_runtime, run_in_lean_runtime_with_default_error_handler,
+    LeanPackage, LeanPackageComponents, Minimal, MinimalComponents, Runtime, run_in_lean_runtime,
+    run_in_lean_runtime_with_default_error_handler,
 };
 pub use thread::{
     run_in_custom_scoped_thread_with_lean_runtime, run_in_custom_thread_with_lean_runtime,

@@ -3,8 +3,11 @@ use std::ffi::{CStr, CString};
 use std::str::FromStr;
 use std::thread;
 
-use lean::{MimallocAllocator, MinimalComponents, NoModules, Runtime};
-use lean_sys::{lean_dec_ref, lean_mk_string, lean_obj_res, lean_string_cstr, lean_string_push};
+use lean::{
+    MimallocAllocator, MinimalComponents, NoModules, Runtime,
+    lean_types::{Owner, string::LeanString},
+};
+use lean_sys::lean_string_push;
 
 #[global_allocator]
 static ALLOCATOR: MimallocAllocator = MimallocAllocator {};
@@ -22,26 +25,21 @@ fn make_string() {
                     runtime,
                     thread::Builder::new().name("test_lean_thread".into()),
                     scope,
-                    |_| {
-                        let initial_string_ptr = initial_cstring.as_ptr();
-                        let longer_lean_string: lean_obj_res;
-                        let final_cstring: &CStr;
+                    |thread_runtime| {
+                        let lean_string = LeanString::from_cstr(thread_runtime, initial_cstring);
+                        let longer_lean_string = unsafe {
+                            LeanString::new(lean_string_push(
+                                lean_string.into_raw(),
+                                new_char as u32,
+                            ))
+                        };
 
-                        unsafe {
-                            let lean_string = lean_mk_string(initial_string_ptr);
-                            longer_lean_string = lean_string_push(lean_string, new_char as u32);
-                            let longer_lean_cstring = lean_string_cstr(longer_lean_string);
-                            final_cstring = CStr::from_ptr(longer_lean_cstring);
-                        }
+                        let final_cstring: &CStr = longer_lean_string.as_cstr();
 
                         let final_string = final_cstring.to_str().unwrap();
                         let mut expected_string = initial_string.clone();
                         expected_string.push(new_char as char);
                         assert_eq!(final_string, expected_string);
-
-                        unsafe {
-                            lean_dec_ref(longer_lean_string);
-                        }
                     },
                 )
                 .unwrap();

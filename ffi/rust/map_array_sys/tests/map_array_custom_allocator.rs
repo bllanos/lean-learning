@@ -70,10 +70,6 @@ fn map_array_custom_allocator() -> Result<(), Box<dyn Error>> {
         // the value is known not to be a scalar.
         lean_dec_ref(map_options_lean_str);
 
-        // Scalar arrays don't seem to be well-supported yet,
-        // otherwise it would be nice to use one.
-        // lean_object* arr = lean_alloc_sarray(unsigned elem_size, size_t size, size_t capacity);
-
         let arr_size: usize = 6;
 
         let arr: *mut lean_object = lean_alloc_array(arr_size, arr_size);
@@ -97,9 +93,9 @@ fn map_array_custom_allocator() -> Result<(), Box<dyn Error>> {
 
         for (object, i) in lean_array_slice
             .iter()
-            .zip([6_u8, 21, 36, 51, 66, 81].iter())
+            .zip([6_i32, 21, 36, 51, 66, 81].iter())
         {
-            let value: u8 = lean_unbox_uint32(*object).try_into()?;
+            let value: i32 = lean_unbox_uint32(*object).try_into()?;
             assert_eq!(value, *i);
         }
 

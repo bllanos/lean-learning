@@ -1,12 +1,8 @@
-use std::error::Error;
-use std::ffi::{CStr, CString};
-use std::fmt;
 use std::marker::PhantomData;
 
 use lean_sys::{
-    b_lean_obj_arg, lean_box, lean_dec, lean_inc, lean_io_error_to_string, lean_io_mk_world,
-    lean_io_result_get_error, lean_io_result_is_ok, lean_io_result_mk_ok, lean_obj_arg,
-    lean_obj_res, lean_object, lean_string_cstr,
+    lean_box, lean_dec, lean_io_mk_world, lean_io_result_is_ok, lean_io_result_mk_ok, lean_obj_arg,
+    lean_obj_res, lean_object,
 };
 
 use crate::{Modules, Runtime, RuntimeComponents, util::NonSendNonSync};
@@ -56,48 +52,5 @@ impl<R: RuntimeComponents, M: Modules> ModulesInitializer<R, M> {
             R::mark_end_initialization();
         }
         Runtime::new()
-    }
-}
-
-#[derive(Debug, Eq, PartialEq)]
-pub struct LeanIoError(pub CString);
-
-impl fmt::Display for LeanIoError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.0.to_string_lossy())
-    }
-}
-
-impl Error for LeanIoError {}
-
-impl LeanIoError {
-    /// Create an instance from a Lean IO error
-    ///
-    /// # Safety
-    ///
-    /// Callers must ensure that `lean_io_error` points to a valid error object
-    pub unsafe fn from_lean_io_error(lean_io_error: b_lean_obj_arg) -> Self {
-        let owned_string: CString;
-        unsafe {
-            lean_inc(lean_io_error);
-            let lean_string = lean_io_error_to_string(lean_io_error);
-            let lean_cstring = lean_string_cstr(lean_string);
-            owned_string = CStr::from_ptr(lean_cstring).to_owned();
-            lean_dec(lean_string);
-        }
-        Self(owned_string)
-    }
-
-    /// Create an instance from a Lean IO error contained in a Lean IO result
-    ///
-    /// # Safety
-    ///
-    /// Callers must ensure that `lean_io_result` points to a valid result
-    /// object and that it is an error variant
-    pub unsafe fn from_lean_io_result(lean_io_result: b_lean_obj_arg) -> Self {
-        unsafe {
-            let lean_io_error = lean_io_result_get_error(lean_io_result);
-            Self::from_lean_io_error(lean_io_error)
-        }
     }
 }

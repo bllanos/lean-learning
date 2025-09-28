@@ -5,10 +5,9 @@ use lean_sys::{b_lean_obj_arg, lean_dec, lean_io_result_get_error};
 
 mod types;
 
-use crate::{LeanIoError, Modules, RuntimeComponents};
+use crate::{LeanError, LeanIoError, Modules, RuntimeComponents};
 pub use types::{
-    LeanError, LeanPackage, LeanPackageComponents, Minimal, MinimalComponents, Runtime,
-    RuntimeInitializer,
+    LeanPackage, LeanPackageComponents, Minimal, MinimalComponents, Runtime, RuntimeInitializer,
 };
 
 static ONCE_INITIALIZATION_GUARD: Once = Once::new();

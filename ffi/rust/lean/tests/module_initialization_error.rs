@@ -33,7 +33,9 @@ unsafe impl Modules for TestModule {
 #[test]
 fn module_initialization_error() {
     let error = lean::run_in_lean_runtime_with_default_error_handler(
-        |_runtime: &Runtime<MinimalComponents, TestModule>| -> Result<(), Infallible> { unreachable!() },
+        |_runtime: &Runtime<MinimalComponents, TestModule>| -> Result<(), Infallible> {
+            unreachable!()
+        },
     )
     .unwrap_err();
 
