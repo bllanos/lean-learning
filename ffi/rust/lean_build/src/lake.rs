@@ -80,8 +80,8 @@ pub struct LakeLibraryDescription<
     /// change detection. Defaults to `lake_package_path`
     pub source_directory: Option<R>,
     /// The directory containing the library's build C files, which is useful in
-    /// cases where the Lake package defines multiple targets. Defaults to
-    /// `lake_package_path`
+    /// cases where only a subtree of the directory hierarchy of build C files
+    /// is of interest. Defaults to `lake_package_path`
     pub c_files_directory: Option<S>,
 }
 
