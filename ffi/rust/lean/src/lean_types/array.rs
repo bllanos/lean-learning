@@ -110,27 +110,25 @@ unsafe impl LeanArrayTypeTag for U32ArrayTypeTag {
 pub type U32Arr = Obj<U32ArrayTypeTag>;
 pub type U32Array = Object<U32ArrayTypeTag>;
 
-pub struct Integer32ArrayTypeTag<T: TryInto<u32> + TryFrom<u32>>(PhantomData<T>)
+pub struct Integer32ArrayTypeTag<T: Into<i32> + TryFrom<i32>>(PhantomData<T>)
 where
-    <T as TryInto<u32>>::Error: Error,
-    <T as TryFrom<u32>>::Error: Error;
+    <T as TryFrom<i32>>::Error: Error;
 
-unsafe impl<T: TryInto<u32> + TryFrom<u32>> LeanArrayTypeTag for Integer32ArrayTypeTag<T>
+unsafe impl<T: Into<i32> + TryFrom<i32>> LeanArrayTypeTag for Integer32ArrayTypeTag<T>
 where
-    <T as TryInto<u32>>::Error: Error,
-    <T as TryFrom<u32>>::Error: Error,
+    <T as TryFrom<i32>>::Error: Error,
 {
     type Input = T;
     type Output = Self::Input;
 
     fn into_element(input: Self::Input) -> *mut lean_object {
-        let u32_value = input.try_into().unwrap();
+        let u32_value = input.into() as u32;
         unsafe { lean_box_uint32(u32_value) }
     }
 
     unsafe fn from_element(element: b_lean_obj_arg) -> Self::Output {
         let u32_value = unsafe { lean_unbox_uint32(element) };
-        u32_value.try_into().unwrap()
+        (u32_value as i32).try_into().unwrap()
     }
 }
 
@@ -155,21 +153,14 @@ unsafe impl LeanArrayTypeTag for U64ArrayTypeTag {
 pub type U64Arr = Obj<U64ArrayTypeTag>;
 pub type U64Array = Object<U64ArrayTypeTag>;
 
-pub struct Integer64ArrayTypeTag<T: TryInto<u64> + TryFrom<u64>>(PhantomData<T>)
-where
-    <T as TryInto<u64>>::Error: Error,
-    <T as TryFrom<u64>>::Error: Error;
+pub enum Integer64ArrayTypeTag {}
 
-unsafe impl<T: TryInto<u64> + TryFrom<u64>> LeanArrayTypeTag for Integer64ArrayTypeTag<T>
-where
-    <T as TryInto<u64>>::Error: Error,
-    <T as TryFrom<u64>>::Error: Error,
-{
-    type Input = T;
+unsafe impl LeanArrayTypeTag for Integer64ArrayTypeTag {
+    type Input = i64;
     type Output = Self::Input;
 
     fn into_element(input: Self::Input) -> *mut lean_object {
-        let u64_value = input.try_into().unwrap();
+        let u64_value = input as u64;
         unsafe { lean_box_uint64(u64_value) }
     }
 
@@ -179,8 +170,8 @@ where
     }
 }
 
-pub type Integer64Arr<T> = Obj<Integer64ArrayTypeTag<T>>;
-pub type Integer64Array<T> = Object<Integer64ArrayTypeTag<T>>;
+pub type Integer64Arr = Obj<Integer64ArrayTypeTag>;
+pub type Integer64Array = Object<Integer64ArrayTypeTag>;
 
 pub enum UsizeArrayTypeTag {}
 
