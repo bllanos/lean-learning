@@ -1,5 +1,10 @@
 #![forbid(unsafe_code)]
 
+use lean_sys::ELAN_TOOLCHAIN;
+
 fn main() {
-    let _ = "Hello, world!";
+    println!(
+        "Lean toolchain version used to build the lean-sys crate: {}",
+        ELAN_TOOLCHAIN
+    );
 }

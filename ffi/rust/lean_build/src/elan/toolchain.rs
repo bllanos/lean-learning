@@ -18,12 +18,12 @@ pub enum LeanToolchainVersion {
 }
 
 impl LeanToolchainVersion {
-    pub fn from_lake_package_path<P: AsRef<Path>>(
+    pub fn from_lake_package_path_option(
         elan_cfg: &ElanCfg,
-        lake_package_path: P,
+        lake_package_path_option: Option<&Path>,
     ) -> Result<(Self, Option<OverrideReason>), Box<dyn Error>> {
         let (toolchain, override_reason) =
-            elan_cfg.toolchain_for_dir(lake_package_path.as_ref())?;
+            elan_cfg.toolchain_for_dir_option(lake_package_path_option)?;
         Ok((toolchain.into(), override_reason))
     }
 

@@ -61,14 +61,17 @@ pub struct Cfg {
 }
 
 impl Cfg {
-    pub fn toolchain_for_dir(&self, path: &Path) -> Result<(Toolchain, Option<OverrideReason>)> {
+    pub fn toolchain_for_dir_option(
+        &self,
+        path: Option<&Path>,
+    ) -> Result<(Toolchain, Option<OverrideReason>)> {
         self.find_override_toolchain_or_default(path)
             .and_then(|r| r.ok_or(Error::NoDefaultToolchain))
     }
 
     pub fn find_override_toolchain_or_default(
         &self,
-        path: &Path,
+        path: Option<&Path>,
     ) -> Result<Option<(Toolchain, Option<OverrideReason>)>> {
         if let Some((toolchain, reason)) = self.find_override(path)? {
             let toolchain = resolve_toolchain_desc(self, &toolchain)?;
@@ -128,7 +131,7 @@ impl Cfg {
 
     pub fn find_override(
         &self,
-        path: &Path,
+        path: Option<&Path>,
     ) -> Result<Option<(UnresolvedToolchainDesc, OverrideReason)>> {
         // First check ELAN_TOOLCHAIN
         if let Some(ref name) = self.env_override {
@@ -162,12 +165,12 @@ impl Cfg {
 
     fn find_override_from_dir_walk(
         &self,
-        dir: &Path,
+        dir: Option<&Path>,
         settings: &Settings,
     ) -> Result<Option<(UnresolvedToolchainDesc, OverrideReason)>> {
         let notify = self.notify_handler.as_ref();
-        let dir = utils::canonicalize_path(dir, &|n| notify(n.into()));
-        let mut dir = Some(&*dir);
+        let dir = dir.map(|dir| utils::canonicalize_path(dir, &|n| notify(n.into())));
+        let mut dir = dir.as_deref();
 
         while let Some(d) = dir {
             // First check the override database

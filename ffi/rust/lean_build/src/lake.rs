@@ -13,23 +13,53 @@ fn display_slice(slice: &[u8]) -> &str {
     str::from_utf8(slice).unwrap_or("[Non-UTF8]")
 }
 
-pub struct LakePackageDescription<P: AsRef<Path>, Q: AsRef<OsStr> = PathBuf> {
-    pub lake_package_path: P,
+fn get_lake_executable_path(lake_executable_path: Option<&OsStr>) -> &OsStr {
+    match lake_executable_path {
+        Some(lake_executable_path) => lake_executable_path,
+        None => OsStr::new("lake"),
+    }
+}
+
+pub trait LakeEnvironmentDescriber {
+    fn get_lake_package_path_option(&self) -> Option<&Path>;
+
+    fn get_lake_executable_path(&self) -> &OsStr;
+}
+
+impl<T: LakeEnvironmentDescriber> LakeEnvironmentDescriber for &T {
+    fn get_lake_package_path_option(&self) -> Option<&Path> {
+        (*self).get_lake_package_path_option()
+    }
+
+    fn get_lake_executable_path(&self) -> &OsStr {
+        (*self).get_lake_executable_path()
+    }
+}
+
+pub struct LakeEnvironmentDescription<P: AsRef<Path>, Q: AsRef<OsStr> = PathBuf> {
+    /// An optional path to a Lake package that will be used when resolving the
+    /// Lean toolchain version
+    pub lake_package_path: Option<P>,
     /// The path to the Lake executable. Defaults to `"lake"`, which requires
     /// the executable to be on the executable search path.
     pub lake_executable_path: Option<Q>,
 }
 
-impl<P: AsRef<Path>, Q: AsRef<OsStr>> LakePackageDescription<P, Q> {
-    fn get_lake_package_path(&self) -> &Path {
-        self.lake_package_path.as_ref()
+impl<P: AsRef<Path>, Q: AsRef<OsStr>> LakeEnvironmentDescriber
+    for LakeEnvironmentDescription<P, Q>
+{
+    fn get_lake_package_path_option(&self) -> Option<&Path> {
+        self.lake_package_path
+            .as_ref()
+            .map(<P as AsRef<Path>>::as_ref)
     }
 
     fn get_lake_executable_path(&self) -> &OsStr {
-        match self.lake_executable_path.as_ref() {
-            Some(lake_executable_path) => lake_executable_path.as_ref(),
-            None => OsStr::new("lake"),
-        }
+        get_lake_executable_path(
+            self.lake_executable_path
+                .as_ref()
+                .map(<Q as AsRef<OsStr>>::as_ref),
+        )
     }
 }
 
@@ -40,27 +70,42 @@ pub struct LakeLibraryDescription<
     R: AsRef<Path> = PathBuf,
     S: AsRef<Path> = PathBuf,
 > {
-    pub lake_package_description: LakePackageDescription<P, Q>,
+    /// The path to the Lake package containing the library
+    pub lake_package_path: P,
+    /// The path to the Lake executable. Defaults to `"lake"`, which requires
+    /// the executable to be on the executable search path.
+    pub lake_executable_path: Option<Q>,
     pub target_name: &'a str,
     /// The directory containing the library's Lean source files, used for
-    /// change detection. Defaults to
-    /// `lake_package_description.lake_package_path`
+    /// change detection. Defaults to `lake_package_path`
     pub source_directory: Option<R>,
     /// The directory containing the library's build C files, which is useful in
     /// cases where the Lake package defines multiple targets. Defaults to
-    /// `lake_package_description.lake_package_path`
+    /// `lake_package_path`
     pub c_files_directory: Option<S>,
+}
+
+impl<'a, P: AsRef<Path>, Q: AsRef<OsStr>, R: AsRef<Path>, S: AsRef<Path>> LakeEnvironmentDescriber
+    for LakeLibraryDescription<'a, P, Q, R, S>
+{
+    fn get_lake_package_path_option(&self) -> Option<&Path> {
+        Some(self.lake_package_path.as_ref())
+    }
+
+    fn get_lake_executable_path(&self) -> &OsStr {
+        get_lake_executable_path(
+            self.lake_executable_path
+                .as_ref()
+                .map(<Q as AsRef<OsStr>>::as_ref),
+        )
+    }
 }
 
 impl<'a, P: AsRef<Path>, Q: AsRef<OsStr>, R: AsRef<Path>, S: AsRef<Path>>
     LakeLibraryDescription<'a, P, Q, R, S>
 {
     fn get_lake_package_path(&self) -> &Path {
-        self.lake_package_description.get_lake_package_path()
-    }
-
-    fn get_lake_executable_path(&self) -> &OsStr {
-        self.lake_package_description.get_lake_executable_path()
+        self.lake_package_path.as_ref()
     }
 
     fn get_source_directory(&self) -> &Path {

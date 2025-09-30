@@ -1,8 +1,8 @@
 use std::error::Error;
 use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use super::{LakePackageDescription, display_slice};
+use super::{LakeEnvironmentDescriber, display_slice};
 
 pub struct LakeEnv {
     elan_toolchain: String,
@@ -150,17 +150,24 @@ impl LakeEnv {
     }
 }
 
-pub fn get_lake_environment<P: AsRef<Path>, Q: AsRef<OsStr>>(
-    lake_package_description: &LakePackageDescription<P, Q>,
+pub fn get_lake_environment<T: LakeEnvironmentDescriber>(
+    lake_environment_describer: T,
 ) -> Result<LakeEnv, Box<dyn Error>> {
-    let args = [
-        OsStr::new("--dir"),
-        lake_package_description.get_lake_package_path().as_os_str(),
-        OsStr::new("env"),
-    ];
-    let stdout = super::run_lake_command_and_retrieve_stdout(
-        lake_package_description.get_lake_executable_path(),
-        &args,
-    )?;
+    let lake_executable_path = lake_environment_describer.get_lake_executable_path();
+    let env_argument = OsStr::new("env");
+    let stdout = match lake_environment_describer.get_lake_package_path_option() {
+        Some(lake_package_path) => {
+            let args = [
+                OsStr::new("--dir"),
+                lake_package_path.as_os_str(),
+                env_argument,
+            ];
+            super::run_lake_command_and_retrieve_stdout(lake_executable_path, &args)
+        }
+        None => {
+            let args = [env_argument];
+            super::run_lake_command_and_retrieve_stdout(lake_executable_path, &args)
+        }
+    }?;
     LakeEnv::from_posix_env(&stdout)
 }

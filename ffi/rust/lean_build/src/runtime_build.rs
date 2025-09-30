@@ -1,13 +1,12 @@
 use std::env;
 use std::error::Error;
-use std::ffi::OsStr;
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use bindgen::builder;
 
-use crate::lake::{self, LakePackageDescription};
+use crate::lake::{self, LakeEnvironmentDescriber};
 
 pub struct OutputFilesConfig<'a> {
     /// The base of the native library that will be generated to contain functions
@@ -44,16 +43,18 @@ impl Default for OutputFilesConfig<'static> {
     }
 }
 
-pub fn build<P: AsRef<Path>, Q: AsRef<OsStr>>(
-    lake_package_description: LakePackageDescription<P, Q>,
+pub fn build<T: LakeEnvironmentDescriber>(
+    lake_environment_describer: T,
     output_files_config: OutputFilesConfig,
 ) -> Result<(), Box<dyn Error>> {
-    let lake_environment = lake::get_lake_environment(&lake_package_description)?;
+    let lake_environment = lake::get_lake_environment(&lake_environment_describer)?;
     let lean_library_directory = lake_environment.lean_library_directory();
     let lean_sysroot_library_directory = lake_environment.lean_sysroot_library_directory();
 
     lake_environment.export_rustc_env();
-    crate::elan::rerun_build_if_lean_version_changes(lake_package_description.lake_package_path)?;
+    crate::elan::rerun_build_if_lean_version_changes(
+        lake_environment_describer.get_lake_package_path_option(),
+    )?;
 
     println!(
         "cargo:rustc-link-search={}",
