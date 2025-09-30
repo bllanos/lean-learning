@@ -1,1 +1,1 @@
-rm -rf out ../map_array/.lake
+rm -rf out ../lean/map_array/.lake

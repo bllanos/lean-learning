@@ -4,7 +4,7 @@ LAKE ?= lake
 
 all: run
 
-MAP_ARRAY_DIR := ../map_array
+MAP_ARRAY_DIR := ../lean/map_array
 
 lake:
 	$(LAKE) --dir=$(MAP_ARRAY_DIR) build @/MapArray:static
