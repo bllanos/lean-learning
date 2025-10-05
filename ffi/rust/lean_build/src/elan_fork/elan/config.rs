@@ -31,7 +31,9 @@ pub enum OverrideReason {
 impl Display for OverrideReason {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> ::std::result::Result<(), fmt::Error> {
         match *self {
-            OverrideReason::Environment => write!(f, "environment override by ELAN_TOOLCHAIN"),
+            OverrideReason::Environment => {
+                write!(f, "environment override by {}", crate::ELAN_TOOLCHAIN)
+            }
             OverrideReason::OverrideDB(ref path) => {
                 write!(f, "directory override for '{}'", path.display())
             }
@@ -87,8 +89,10 @@ impl Cfg {
                 Err(e) => {
                     let reason_err = match reason {
                         OverrideReason::Environment => {
-                            "the ELAN_TOOLCHAIN environment variable specifies an uninstalled toolchain"
-                                .to_string()
+                            format!(
+                                "the {} environment variable specifies an uninstalled toolchain",
+                                crate::ELAN_TOOLCHAIN
+                            )
                         }
                         OverrideReason::OverrideDB(ref path) => {
                             format!(
@@ -277,7 +281,7 @@ impl Cfg {
         let toolchains_dir = elan_dir.join("toolchains");
 
         // Environment override
-        let env_override = env::var("ELAN_TOOLCHAIN")
+        let env_override = env::var(crate::ELAN_TOOLCHAIN)
             .ok()
             .and_then(utils::if_not_empty);
 

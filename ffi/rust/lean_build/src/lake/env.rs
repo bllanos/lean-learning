@@ -11,7 +11,7 @@ pub struct LakeEnv {
 }
 
 impl LakeEnv {
-    const ELAN_TOOLCHAIN: &str = "ELAN_TOOLCHAIN";
+    const ELAN_TOOLCHAIN: &str = crate::ELAN_TOOLCHAIN;
     const LEAN_GITHASH: &str = "LEAN_GITHASH";
     const LEAN_SYSROOT: &str = "LEAN_SYSROOT";
 

@@ -9,6 +9,9 @@ mod rust;
 
 pub use lake::{LakeEnvironmentDescriber, LakeEnvironmentDescription};
 
+/// The environment variable used to specify the Lean toolchain
+const ELAN_TOOLCHAIN: &str = "ELAN_TOOLCHAIN";
+
 fn write_warning_allow_directives<W: Write>(mut writer: W) -> std::io::Result<()> {
     writeln!(
         writer,

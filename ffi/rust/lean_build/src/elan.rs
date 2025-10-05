@@ -21,7 +21,7 @@ fn create_elan_cfg() -> Result<ElanCfg, Box<dyn Error>> {
 }
 
 fn rerun_build_if_elan_environment_variables_change() {
-    println!("cargo:rerun-if-env-changed=ELAN_TOOLCHAIN");
+    println!("cargo:rerun-if-env-changed={}", crate::ELAN_TOOLCHAIN);
 }
 
 fn rerun_build_if_elan_settings_change(elan_cfg: &ElanCfg) {
