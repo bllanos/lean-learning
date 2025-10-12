@@ -44,6 +44,7 @@ pub fn build<P: AsRef<Path>, Q: AsRef<OsStr>, R: AsRef<Path>, S: AsRef<Path>>(
     lake_library_description: &LakeLibraryDescription<P, Q, R, S>,
     output_files_config: OutputFilesConfig,
 ) -> Result<(), Box<dyn Error>> {
+    // Ensure the Lean toolchain is installed first
     let lake_environment = lake::get_lake_environment(lake_library_description)?;
 
     lake::build_and_link_static_lean_library(lake_library_description)?;

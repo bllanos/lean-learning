@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::path::Path;
 use std::sync::Arc;
 
 use crate::elan_fork::elan::{
@@ -58,14 +57,12 @@ fn rerun_build_if_lean_toolchain_override_changes(
     }
 }
 
-pub fn rerun_build_if_lean_version_changes(
-    lake_package_path: Option<&Path>,
-) -> Result<(), Box<dyn Error>> {
+pub fn rerun_build_if_lean_version_changes() -> Result<(), Box<dyn Error>> {
     rerun_build_if_elan_environment_variables_change();
     let elan_cfg = create_elan_cfg()?;
     rerun_build_if_elan_settings_change(&elan_cfg);
     let (lean_toolchain_version, override_reason) =
-        LeanToolchainVersion::from_lake_package_path_option(&elan_cfg, lake_package_path)?;
+        LeanToolchainVersion::from_elan_environment(&elan_cfg)?;
     if let Some(override_reason) = override_reason {
         rerun_build_if_lean_toolchain_override_changes(&elan_cfg, &override_reason)?;
     }

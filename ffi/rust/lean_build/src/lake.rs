@@ -21,44 +21,27 @@ fn get_lake_executable_path(lake_executable_path: Option<&OsStr>) -> &OsStr {
 }
 
 pub trait LakeEnvironmentDescriber {
-    fn get_lake_package_path_option(&self) -> Option<&Path>;
-
     fn get_lake_executable_path(&self) -> &OsStr;
 }
 
 impl<T: LakeEnvironmentDescriber> LakeEnvironmentDescriber for &T {
-    fn get_lake_package_path_option(&self) -> Option<&Path> {
-        (*self).get_lake_package_path_option()
-    }
-
     fn get_lake_executable_path(&self) -> &OsStr {
         (*self).get_lake_executable_path()
     }
 }
 
-pub struct LakeEnvironmentDescription<P: AsRef<Path>, Q: AsRef<OsStr> = PathBuf> {
-    /// An optional path to a Lake package that will be used when resolving the
-    /// Lean toolchain version
-    pub lake_package_path: Option<P>,
+pub struct LakeEnvironmentDescription<T: AsRef<OsStr> = PathBuf> {
     /// The path to the Lake executable. Defaults to `"lake"`, which requires
     /// the executable to be on the executable search path.
-    pub lake_executable_path: Option<Q>,
+    pub lake_executable_path: Option<T>,
 }
 
-impl<P: AsRef<Path>, Q: AsRef<OsStr>> LakeEnvironmentDescriber
-    for LakeEnvironmentDescription<P, Q>
-{
-    fn get_lake_package_path_option(&self) -> Option<&Path> {
-        self.lake_package_path
-            .as_ref()
-            .map(<P as AsRef<Path>>::as_ref)
-    }
-
+impl<T: AsRef<OsStr>> LakeEnvironmentDescriber for LakeEnvironmentDescription<T> {
     fn get_lake_executable_path(&self) -> &OsStr {
         get_lake_executable_path(
             self.lake_executable_path
                 .as_ref()
-                .map(<Q as AsRef<OsStr>>::as_ref),
+                .map(<T as AsRef<OsStr>>::as_ref),
         )
     }
 }
@@ -88,10 +71,6 @@ pub struct LakeLibraryDescription<
 impl<'a, P: AsRef<Path>, Q: AsRef<OsStr>, R: AsRef<Path>, S: AsRef<Path>> LakeEnvironmentDescriber
     for LakeLibraryDescription<'a, P, Q, R, S>
 {
-    fn get_lake_package_path_option(&self) -> Option<&Path> {
-        Some(self.lake_package_path.as_ref())
-    }
-
     fn get_lake_executable_path(&self) -> &OsStr {
         get_lake_executable_path(
             self.lake_executable_path

@@ -47,14 +47,13 @@ pub fn build<T: LakeEnvironmentDescriber>(
     lake_environment_describer: T,
     output_files_config: OutputFilesConfig,
 ) -> Result<(), Box<dyn Error>> {
+    // Ensure the Lean toolchain is installed first
     let lake_environment = lake::get_lake_environment(&lake_environment_describer)?;
     let lean_library_directory = lake_environment.lean_library_directory();
     let lean_sysroot_library_directory = lake_environment.lean_sysroot_library_directory();
 
     lake_environment.export_rustc_env();
-    crate::elan::rerun_build_if_lean_version_changes(
-        lake_environment_describer.get_lake_package_path_option(),
-    )?;
+    crate::elan::rerun_build_if_lean_version_changes()?;
 
     println!(
         "cargo:rustc-link-search={}",

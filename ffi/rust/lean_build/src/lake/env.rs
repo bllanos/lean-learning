@@ -150,24 +150,17 @@ impl LakeEnv {
     }
 }
 
+/// Invokes Lake to discover Lake environment variables. If the Lake executable
+/// is actually Elan's
+/// [proxy](https://rust-lang.github.io/rustup/concepts/index.html#how-rustup-works)
+/// ([Elan is a fork of
+/// `rustup`](https://github.com/leanprover/elan/blob/2a16e9666f50e5d7f6d71e8dcfa1a5aa345dfd61/README.md?plain=1#L66)),
+/// then Elan will install the Lean toolchain if it is missing.
 pub fn get_lake_environment<T: LakeEnvironmentDescriber>(
     lake_environment_describer: T,
 ) -> Result<LakeEnv, Box<dyn Error>> {
     let lake_executable_path = lake_environment_describer.get_lake_executable_path();
-    let env_argument = OsStr::new("env");
-    let stdout = match lake_environment_describer.get_lake_package_path_option() {
-        Some(lake_package_path) => {
-            let args = [
-                OsStr::new("--dir"),
-                lake_package_path.as_os_str(),
-                env_argument,
-            ];
-            super::run_lake_command_and_retrieve_stdout(lake_executable_path, &args)
-        }
-        None => {
-            let args = [env_argument];
-            super::run_lake_command_and_retrieve_stdout(lake_executable_path, &args)
-        }
-    }?;
+    let args = [OsStr::new("env")];
+    let stdout = super::run_lake_command_and_retrieve_stdout(lake_executable_path, &args)?;
     LakeEnv::from_posix_env(&stdout)
 }

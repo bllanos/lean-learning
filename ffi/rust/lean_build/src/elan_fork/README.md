@@ -25,6 +25,7 @@ Aside from the limited scope of the code included from Elan, the following other
    2. To make builds more deterministic by reducing reliance on data from external systems.
 2. Code was changed to return an error when it would otherwise have modified files or directories, to avoid modifying the user's Lean installation.
 3. [`thiserror`](https://github.com/dtolnay/thiserror) was used instead of [`error-chain`](https://github.com/rust-lang-deprecated/error-chain), which is deprecated.
+4. Toolchain resolution no longer requires a directory argument but uses the current directory when the toolhain is not overridden by the `ELAN_TOOLCHAIN` environment variable.
 
 ## Rationale for inclusion
 

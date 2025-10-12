@@ -43,6 +43,8 @@ pub enum Error {
     Utils(#[from] elan_utils::Error),
     #[error(transparent)]
     Dist(#[from] elan_dist::Error),
+    #[error("failed to obtain the current directory")]
+    CurrentDirectory { source: std::io::Error },
 }
 
 #[derive(thiserror::Error, Debug)]

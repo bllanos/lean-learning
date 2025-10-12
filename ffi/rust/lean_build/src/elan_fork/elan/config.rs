@@ -1,7 +1,7 @@
 use std::env;
 use std::fmt::{self, Display};
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use super::super::elan_dist::dist::ToolchainDesc;
@@ -63,19 +63,15 @@ pub struct Cfg {
 }
 
 impl Cfg {
-    pub fn toolchain_for_dir_option(
-        &self,
-        path: Option<&Path>,
-    ) -> Result<(Toolchain, Option<OverrideReason>)> {
-        self.find_override_toolchain_or_default(path)
+    pub fn toolchain_for_current_directory(&self) -> Result<(Toolchain, Option<OverrideReason>)> {
+        self.find_override_toolchain_or_default()
             .and_then(|r| r.ok_or(Error::NoDefaultToolchain))
     }
 
     pub fn find_override_toolchain_or_default(
         &self,
-        path: Option<&Path>,
     ) -> Result<Option<(Toolchain, Option<OverrideReason>)>> {
-        if let Some((toolchain, reason)) = self.find_override(path)? {
+        if let Some((toolchain, reason)) = self.find_override()? {
             let toolchain = resolve_toolchain_desc(self, &toolchain)?;
             match self.get_toolchain(&toolchain, false) {
                 Ok(toolchain) => {
@@ -133,10 +129,7 @@ impl Cfg {
         }
     }
 
-    pub fn find_override(
-        &self,
-        path: Option<&Path>,
-    ) -> Result<Option<(UnresolvedToolchainDesc, OverrideReason)>> {
+    pub fn find_override(&self) -> Result<Option<(UnresolvedToolchainDesc, OverrideReason)>> {
         // First check ELAN_TOOLCHAIN
         if let Some(ref name) = self.env_override {
             return Ok(Some((
@@ -145,12 +138,12 @@ impl Cfg {
             )));
         }
 
-        // Then walk up the directory tree from 'path' looking for either the
-        // directory in override database, a `lean-toolchain` file, or a
-        // `leanpkg.toml` file.
+        // Then walk up the directory tree from the current directory, looking
+        // for either the directory in override database, a `lean-toolchain`
+        // file, or a `leanpkg.toml` file.
         if let Some(res) = self
             .settings_file
-            .with(|s| self.find_override_from_dir_walk(path, s))?
+            .with(|s| self.find_override_from_dir_walk(s))?
         {
             return Ok(Some(res));
         }
@@ -169,11 +162,11 @@ impl Cfg {
 
     fn find_override_from_dir_walk(
         &self,
-        dir: Option<&Path>,
         settings: &Settings,
     ) -> Result<Option<(UnresolvedToolchainDesc, OverrideReason)>> {
         let notify = self.notify_handler.as_ref();
-        let dir = dir.map(|dir| utils::canonicalize_path(dir, &|n| notify(n.into())));
+        let dir =
+            Some(env::current_dir().map_err(|error| Error::CurrentDirectory { source: error })?);
         let mut dir = dir.as_deref();
 
         while let Some(d) = dir {

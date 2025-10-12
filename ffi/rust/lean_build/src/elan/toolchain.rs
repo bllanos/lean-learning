@@ -1,6 +1,5 @@
 use std::error::Error;
 use std::fmt;
-use std::path::Path;
 
 use crate::elan_fork::elan::{Cfg as ElanCfg, OverrideReason, Toolchain};
 use crate::elan_fork::elan_dist::dist::ToolchainDesc;
@@ -18,12 +17,10 @@ pub enum LeanToolchainVersion {
 }
 
 impl LeanToolchainVersion {
-    pub fn from_lake_package_path_option(
+    pub fn from_elan_environment(
         elan_cfg: &ElanCfg,
-        lake_package_path_option: Option<&Path>,
     ) -> Result<(Self, Option<OverrideReason>), Box<dyn Error>> {
-        let (toolchain, override_reason) =
-            elan_cfg.toolchain_for_dir_option(lake_package_path_option)?;
+        let (toolchain, override_reason) = elan_cfg.toolchain_for_current_directory()?;
         Ok((toolchain.into(), override_reason))
     }
 
