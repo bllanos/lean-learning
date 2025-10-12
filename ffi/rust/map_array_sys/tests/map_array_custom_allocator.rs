@@ -51,10 +51,10 @@ fn map_array_custom_allocator() -> Result<(), Box<dyn Error>> {
     // Program logic
     // -------------
     unsafe {
-        let addend: u32 = 2;
-        let multiplicand: u32 = 3;
+        let addend: i32 = 2;
+        let multiplicand: i32 = 3;
 
-        let map_options: *mut lean_object = mk_map_options(addend, multiplicand);
+        let map_options: *mut lean_object = mk_map_options(addend as u32, multiplicand as u32);
         // Avoid having `map_options_to_string()` destroy `map_options`
         lean_inc(map_options);
         let map_options_lean_str: *mut lean_object = map_options_to_string(map_options);
