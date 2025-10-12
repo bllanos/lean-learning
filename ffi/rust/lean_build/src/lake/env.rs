@@ -150,8 +150,9 @@ impl LakeEnv {
     }
 }
 
-/// Invokes Lake to discover Lake environment variables. If the Lake executable
-/// is actually Elan's
+/// Invokes Lake to discover Lake environment variables
+///
+/// If the Lake executable is actually Elan's
 /// [proxy](https://rust-lang.github.io/rustup/concepts/index.html#how-rustup-works)
 /// ([Elan is a fork of
 /// `rustup`](https://github.com/leanprover/elan/blob/2a16e9666f50e5d7f6d71e8dcfa1a5aa345dfd61/README.md?plain=1#L66)),

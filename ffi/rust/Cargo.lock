@@ -231,7 +231,9 @@ dependencies = [
 name = "map-array-bin"
 version = "0.1.0"
 dependencies = [
+ "lean",
  "lean-sys",
+ "map-array-sys",
 ]
 
 [[package]]
