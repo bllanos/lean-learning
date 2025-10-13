@@ -11,6 +11,11 @@ This repository contains Rust [crates](https://doc.rust-lang.org/book/ch07-01-pa
   - [C](#c)
   - [Unsafe Rust](#unsafe-rust)
   - [Safe Rust](#safe-rust)
+- [FAQ](#faq)
+  - [Why use Lean?](#why-use-lean)
+  - [Why use Rust?](#why-use-rust)
+  - [Why not use Rust from Lean?](#why-not-use-rust-from-lean)
+  - [What are the advantages of combining the two languages?](#what-are-the-advantages-of-combining-the-two-languages)
 - [Credits](#credits)
 - [References](#references)
 
@@ -193,6 +198,46 @@ This high-level program depends on the following additional Rust crates:
 
 2. [`map-array`](rust/map_array) provides higher-level abstractions on top of [`map-array-sys`](rust/map_array_sys).
 
+## FAQ
+
+### Why use Lean?
+
+Lean is an expressive language that allows programmers to focus on the abstract meaning of code and ignore execution details. Programs written in Lean are easy to reason about using [denotational semantics](https://en.wikipedia.org/wiki/Denotational_semantics) and easier to formally verify for correctness.
+
+### Why use Rust?
+
+Rust is a systems programming language with a large ecosystem of tooling and libraries that support a wide range of applications.
+
+### Why not use Rust from Lean?
+
+The code in this repository might assist with developing Lean libraries that depend on Rust libraries, although at the time of writing this idea has not been tested. This project assumes that Lean and Rust libraries will be linked together using Rust's build tools and that the `main()` functions of programs will be written in Rust. It is not designed as a framework for writing Lean programs that depend on Rust libraries, but for writing Rust programs that depend on Lean libraries which may, in turn, depend on Rust libraries.
+
+Writing Lean libraries that depend on Rust code is undesirable from two perspectives:
+
+1. Lean's formal verification tools cannot reason about code in other languages. Rust code could make Lean libraries unsound. A related idea is the [F* language's lattice of computational effects](https://fstar-lang.org/papers/mumon/paper.pdf) where pure, total functions cannot depend on partial or divergent functions.
+
+2. Rust is an ideal language for writing runtime infrastructure that connects logic with the real world. Runtime infrastructure should have a one-way dependency on the abstract logic of a program, according to architecture patterns such as the [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html).
+
+### What are the advantages of combining the two languages?
+
+A program written in a functional programming language combines a pure functional core with a surrounding runtime that executes side effects (see [Functional Programming in Lean](https://lean-lang.org/functional_programming_in_lean/Hello___-World___/Running-a-Program)). Working on both the runtime (in a systems programming language such as Rust) and pure functional core of a program (in a pure functional language such as Lean) leads to better results than working only within the core, for the following reasons:
+
+1. The runtime has some built-in overhead because it needs to run arbitrary programs. This is a "curse of generality". A runtime that can make assumptions about the program it is running can work more efficiently.
+
+   For example, when the core opens a file, the runtime must keep track of references to the file to [avoid closing the file until after all references expire](https://lean-lang.org/functional_programming_in_lean/Hello___-World___/Worked-Example___--cat). If the runtime instead knew which file to open, invoked a function from the core on data from the file (not on the file itself), and closed the file immediately afterwards, it would not need file handle reference tracking.
+
+2. Customizing the runtime provides a greater level of control over how a program executes, and allows parts of the runtime to be removed if it is known that the program will not use them.
+
+3. Programs need to perform operations ("side effects") that are difficult to model as pure functions. Functional programming languages introduce abstractions to help manage side effects, such as [monads](https://lean-lang.org/functional_programming_in_lean/Monads/Summary), [algebraic effects](https://koka-lang.github.io/koka/doc/book.html#why-handlers), and [graded types](https://granule-project.github.io/granule.html). Unfortunately, these abstractions are sometimes:
+
+   1. Difficult to understand
+
+   2. Contagious, affecting the entire language or large portions of code that do not directly perform side effects
+
+   3. A false sense of security, because the execution environment may violate assumptions made when reasoning about the program.
+
+   By developing part of a program at the runtime level, we can entirely eliminate representations of some side effects from the pure functional core.
+
 ## Credits
 
 The [`rust/lean_build/src/elan_fork/`](rust/lean_build/src/elan_fork) directory contains code adapted from [Elan](https://github.com/leanprover/elan), the Lean version manager. Refer to [`rust/lean_build/src/elan_fork/README.md`](rust/lean_build/src/elan_fork/README.md) for more information.
@@ -203,10 +248,12 @@ The [`rust/lean_build/src/elan_fork/`](rust/lean_build/src/elan_fork) directory 
 
 2. Lake [Reverse FFI example](https://github.com/leanprover/lean4/tree/14ff08db6f651775ead432d367b6b083878bb0f9/tests/lake/examples/reverse-ffi)
 
-3. [`lean-sys` Rust crate](https://github.com/digama0/lean-sys)
+3. Lake [FFI example](https://github.com/leanprover/lean4/tree/14ff08db6f651775ead432d367b6b083878bb0f9/tests/lake/examples/ffi)
 
-4. [`mimalloc` Rust crate](https://github.com/purpleprotocol/mimalloc_rust)
+4. [`lean-sys` Rust crate](https://github.com/digama0/lean-sys)
 
-5. [The bindgen User Guide](https://rust-lang.github.io/rust-bindgen/)
+5. [`mimalloc` Rust crate](https://github.com/purpleprotocol/mimalloc_rust)
 
-6. [The Rustnomicon](https://doc.rust-lang.org/nomicon/index.html), in particular the [chapter on FFI](https://doc.rust-lang.org/nomicon/ffi.html)
+6. [The bindgen User Guide](https://rust-lang.github.io/rust-bindgen/)
+
+7. [The Rustnomicon](https://doc.rust-lang.org/nomicon/index.html), in particular the [chapter on FFI](https://doc.rust-lang.org/nomicon/ffi.html)
