@@ -1,8 +1,10 @@
-# Integrating Lean and Rust <!-- omit from toc -->
+<!-- omit from toc -->
+# Integrating Lean and Rust
 
 This repository contains Rust [crates](https://doc.rust-lang.org/book/ch07-01-packages-and-crates.html#packages-and-crates) for using Lean's runtime and Lean libraries in Rust programs, and provides example programs combining the two languages.
 
-## Table of contents <!-- omit from toc -->
+<!-- omit from toc -->
+## Table of contents
 
 - [Setup](#setup)
   - [Other useful tools](#other-useful-tools)
@@ -18,6 +20,8 @@ This repository contains Rust [crates](https://doc.rust-lang.org/book/ch07-01-pa
   - [What are the advantages of combining the two languages?](#what-are-the-advantages-of-combining-the-two-languages)
 - [Credits](#credits)
 - [References](#references)
+- [Contact](#contact)
+- [License](#license)
 
 ## Setup
 
@@ -220,7 +224,7 @@ Writing Lean libraries that depend on Rust code is undesirable from two perspect
 
 ### What are the advantages of combining the two languages?
 
-A program written in a functional programming language combines a pure functional core with a surrounding runtime that executes side effects (see [Functional Programming in Lean](https://lean-lang.org/functional_programming_in_lean/Hello___-World___/Running-a-Program)). Working on both the runtime (in a systems programming language such as Rust) and pure functional core of a program (in a pure functional language such as Lean) leads to better results than working only within the core, for the following reasons:
+A program written in a functional programming language combines a pure functional core with a surrounding runtime that executes side effects (see [_Functional Programming in Lean_](https://lean-lang.org/functional_programming_in_lean/Hello___-World___/Running-a-Program)). Working on both the runtime (in a systems programming language such as Rust) and pure functional core of a program (in a pure functional language such as Lean) leads to better results than working only within the core, for the following reasons:
 
 1. The runtime has some built-in overhead because it needs to run arbitrary programs. This is a "curse of generality". A runtime that can make assumptions about the program it is running can work more efficiently.
 
@@ -257,3 +261,22 @@ The [`rust/lean_build/src/elan_fork/`](rust/lean_build/src/elan_fork) directory 
 6. [The bindgen User Guide](https://rust-lang.github.io/rust-bindgen/)
 
 7. [The Rustnomicon](https://doc.rust-lang.org/nomicon/index.html), in particular the [chapter on FFI](https://doc.rust-lang.org/nomicon/ffi.html)
+
+## Contact
+
+Feel free to [open an issue](https://github.com/bllanos/lean-rust-ffi/issues).
+
+If you want to start a conversation outside of GitHub, you can contact us first by email, and then we can find the best place to continue the conversation. (See commit metadata for email addresses)
+
+## License
+
+Licensed under either of
+
+- Apache License, Version 2.0
+  ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license
+  ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+
+at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
