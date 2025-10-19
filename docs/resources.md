@@ -21,6 +21,7 @@ We found the following resources helpful. Each one is listed alongside the date 
 ### Related systems
 
 1. (2025) [Proof-Oriented Programming in F*](https://fstar-lang.org/tutorial/proof-oriented-programming-in-fstar.pdf), by Nikhil Swamy, Guido Martínez, and Aseem Rastogi, updated May 23, 2025
+2. (2025) Dominic Orchard, Vilem-Benjamin Liepelt, and Harley Eades III. 2019. Quantitative program reasoning with graded modal types. Proc. ACM Program. Lang. 3, ICFP, Article 110 (August 2019), 30 pages. <https://doi.org/10.1145/3341714>
 
 ### Software design
 
