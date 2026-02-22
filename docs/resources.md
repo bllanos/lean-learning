@@ -36,3 +36,4 @@ We found the following resources helpful. Each one is listed alongside the date 
 3. (2025) [Software Foundations, Volume 1: Logical Foundations](https://softwarefoundations.cis.upenn.edu/lf-current/index.html), by Pierce et al., version 6.7.1 (January 13, 2025, Coq 8.19.2 or later)
 4. (2025) [Software Foundations, Volume 2: Programming Language Foundations](https://softwarefoundations.cis.upenn.edu/plf-current/index.html), by Pierce et al., version 6.9.0 (August 24, 2025, Coq 9.0.0 or later)
 5. (2026) [Software Foundations, Volume 3: Verified Functional Algorithms](https://softwarefoundations.cis.upenn.edu/vfa-current/index.html), by Appel et al., version 2.0 (January 7, 2026, Coq 9.0.0 or later)
+6. (2026) [Software Foundations, Volume 4: QuickChick: Property-Based Testing in Rocq](https://softwarefoundations.cis.upenn.edu/qc-current/index.html), by Leonidas Lampropoulos and Benjamin C. Pierce, version 2.0 (January 7, 2026, Coq 9.0.0 or later)
