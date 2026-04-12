@@ -1,11 +1,9 @@
 <!-- omit in toc -->
-
 # Learning resources
 
 We found the following resources helpful. Each one is listed alongside the date that it was most heavily used. Be mindful that, if a date is far in the past, then the resource may no longer exist or may have changed substantially since. The list is not exhaustive.
 
 <!-- omit in toc -->
-
 ## Table of Contents
 
 - [Core Lean resources](#core-lean-resources)
@@ -33,7 +31,8 @@ We found the following resources helpful. Each one is listed alongside the date 
 
 1. (2024) [Category Theory for Programmers](https://github.com/hmemcpy/milewski-ctfp-pdf/releases), by Bartosz Milewski, compiled and edited by Igal Tabachnik
 2. (2025) Philip Wadler. 2015. Propositions as types. Commun. ACM 58, 12 (December 2015), 75–84. <https://doi.org/10.1145/2699407>
-3. (2025) [Software Foundations, Volume 1: Logical Foundations](https://softwarefoundations.cis.upenn.edu/lf-current/index.html), by Pierce et al., version 6.7.1 (January 13, 2025, Coq 8.19.2 or later)
-4. (2025) [Software Foundations, Volume 2: Programming Language Foundations](https://softwarefoundations.cis.upenn.edu/plf-current/index.html), by Pierce et al., version 6.9.0 (August 24, 2025, Coq 9.0.0 or later)
-5. (2026) [Software Foundations, Volume 3: Verified Functional Algorithms](https://softwarefoundations.cis.upenn.edu/vfa-current/index.html), by Appel et al., version 2.0 (January 7, 2026, Coq 9.0.0 or later)
-6. (2026) [Software Foundations, Volume 4: QuickChick: Property-Based Testing in Rocq](https://softwarefoundations.cis.upenn.edu/qc-current/index.html), by Leonidas Lampropoulos and Benjamin C. Pierce, version 2.0 (January 7, 2026, Coq 9.0.0 or later)
+3. (2025) [Software Foundations, Volume 1: Logical Foundations](https://softwarefoundations.cis.upenn.edu/lf-current/index.html), by Pierce et al., version 6.7.1 (January 13, 2025, Rocq 8.19.2 or later)
+4. (2025) [Software Foundations, Volume 2: Programming Language Foundations](https://softwarefoundations.cis.upenn.edu/plf-current/index.html), by Pierce et al., version 6.9.0 (August 24, 2025, Rocq 9.0.0 or later)
+5. (2026) [Software Foundations, Volume 3: Verified Functional Algorithms](https://softwarefoundations.cis.upenn.edu/vfa-current/index.html), by Appel et al., version 2.0 (January 7, 2026, Rocq 9.0.0 or later)
+6. (2026) [Software Foundations, Volume 4: QuickChick: Property-Based Testing in Rocq](https://softwarefoundations.cis.upenn.edu/qc-current/index.html), by Leonidas Lampropoulos and Benjamin C. Pierce, version 2.0 (January 7, 2026, Rocq 9.0.0 or later)
+7. (2026) [Software Foundations, Volume 5: Verifiable C](https://softwarefoundations.cis.upenn.edu/vc-current/index.html), by Andrew W. Appel, Lennart Beringer, and Qinxiang Cao, version 2.0 (January 7, 2026, Rocq 9.0.0 or later)
