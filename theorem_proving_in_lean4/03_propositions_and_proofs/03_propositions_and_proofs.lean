@@ -393,3 +393,43 @@ example : ¬p ∨ ¬q → ¬(p ∧ q) := fun hor : ¬p ∨ ¬q =>
     Or.elim hor
       (fun hnp : ¬p => fun hpq : p ∧ q => hnp hpq.left)
       (fun hnq : ¬q => fun hpq : p ∧ q => hnq hpq.right)
+
+example : ¬(p ∧ ¬p) := fun hex : p ∧ ¬p =>
+  absurd hex.left hex.right
+
+example : p ∧ ¬q → ¬(p → q) := fun h : p ∧ ¬q =>
+  fun himp : p → q =>
+    h.right (himp h.left)
+
+example : ¬p → (p → q) := fun h : ¬p =>
+  fun hp : p =>
+    absurd hp h
+
+example : (¬p ∨ q) → (p → q) := fun h : ¬p ∨ q =>
+  fun hp : p =>
+    Or.elim h
+      (fun hnp : ¬p => (absurd hp hnp))
+      (fun hq : q => hq)
+
+example : p ∨ False ↔ p := Iff.intro
+  (fun hor : p ∨ False =>
+    hor.elim
+      id
+      (fun hf : False => hf.elim))
+  (Or.inl)
+
+example : p ∧ False ↔ False := Iff.intro
+  (fun h : p ∧ False => h.right)
+  (False.elim)
+
+example : (p → q) → (¬q → ¬p) := fun himp : p → q =>
+  fun hnq : ¬q =>
+    fun hp : p =>
+      hnq (himp hp)
+
+example : ¬(p ↔ ¬p) := fun h : p ↔ ¬p =>
+  have p_imp_not_p := h.mp
+  have not_p_imp_p := h.mpr
+  have not_p := fun hp : p =>
+    (p_imp_not_p hp) hp
+  not_p (not_p_imp_p not_p)
