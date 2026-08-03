@@ -40,6 +40,7 @@ variable {q : Prop}
 
 theorem t1 : p → q → p := fun hp : p => fun hq : q => hp
 #print t1
+#print axioms t1
 
 theorem t1_2 : p → q → p :=
   fun hp : p =>
@@ -211,6 +212,7 @@ theorem dne {p : Prop} (h : ¬¬p) : p :=
   Or.elim (em p)
     (fun hp : p => hp)
     (fun hnp : ¬p => absurd hnp h)
+#print axioms dne
 
 theorem dne_converse_via_em {p : Prop} (h : p) : ¬¬p :=
   Or.elim (em (¬p))
@@ -433,3 +435,59 @@ example : ¬(p ↔ ¬p) := fun h : p ↔ ¬p =>
   have not_p := fun hp : p =>
     (p_imp_not_p hp) hp
   not_p (not_p_imp_p not_p)
+
+open Classical
+
+variable (p q r : Prop)
+
+example : (p → q ∨ r) → ((p → q) ∨ (p → r)) :=
+  byCases (p := q) (q := (p → q ∨ r) → ((p → q) ∨ (p → r)))
+    (fun hq : q => fun hpqr : p → q ∨ r => Or.inl (fun hp : p => hq))
+    (fun hnq : ¬q =>
+      byCases (p := r) (q := (p → q ∨ r) → ((p → q) ∨ (p → r)))
+      (fun hr : r => fun hpqr : p → q ∨ r => Or.inr (fun hp : p => hr))
+      (fun hnr : ¬r => fun hpqr : p → q ∨ r => Or.inl (fun hp : p =>
+          Or.elim (hpqr hp)
+            (fun hq : q => absurd hq hnq)
+            (fun hr : r => absurd hr hnr)
+          )
+        )
+      )
+
+example : ¬(p ∧ q) → ¬p ∨ ¬q := fun hnand : ¬(p ∧ q) =>
+  byCases (p := p) (q := ¬p ∨ ¬q)
+    (fun hp : p => byCases (p := q) (q := ¬p ∨ ¬q)
+      (fun hq : q => absurd (And.intro hp hq) hnand)
+      (fun hnq : ¬q => Or.inr hnq)
+    )
+    (fun hnp : ¬p => Or.inl hnp)
+
+example : ¬(p → q) → p ∧ ¬q := fun hnimp : ¬(p → q) =>
+  byCases (p := p) (q := p ∧ ¬q)
+    (fun hp : p => And.intro hp (
+        byCases (p := q) (q := ¬q)
+        (fun hq : q => absurd (fun hp : p => hq) hnimp)
+        (fun hnq : ¬q => hnq)
+      )
+    )
+    (fun hnp : ¬p => absurd (fun hp : p => absurd hp hnp) hnimp)
+
+example : (p → q) → (¬p ∨ q) := fun himp : (p → q) =>
+  byCases
+    (fun hp : p => Or.inr (himp hp))
+    (fun hnp : ¬p => Or.inl hnp)
+
+example : (¬q → ¬p) → (p → q) := fun hcontrapositive : (¬q → ¬p) =>
+  byCases
+    (fun hq : q => fun hp : p => hq)
+    (fun hnq : ¬q => fun hp : p => absurd hp (hcontrapositive hnq))
+
+example : p ∨ ¬p := em p
+
+example : (((p → q) → p) → p) := byCases
+    (fun hp : p => fun _ => hp)
+    (fun hnp : ¬p => byCases
+      (fun hq : q => fun himp : (p → q) → p =>
+        absurd (himp (fun hp : p => hq)) hnp)
+      (fun hnq : ¬q => fun himp : (p → q) → p =>
+        absurd (himp (fun hp : p => absurd hp hnp)) hnp))
