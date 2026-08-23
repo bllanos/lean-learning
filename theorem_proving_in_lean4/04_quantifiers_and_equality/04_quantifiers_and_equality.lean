@@ -328,3 +328,86 @@ theorem even_plus_even2 (h1 : IsEven a) (h2 : IsEven b) : IsEven (a + b) :=
   match h1, h2 with
   | ⟨w1, hw1⟩, ⟨w2, hw2⟩ =>
     ⟨w1 + w2, show a + b = 2 * (w1 + w2) by rw [hw1, hw2, Nat.mul_add]⟩
+
+section
+  open Classical
+  variable (p : α → Prop)
+
+  example (h : ¬ ∀ x, ¬ p x) : ∃ x, p x :=
+    byContradiction
+      (fun h1 : ¬ ∃ x, p x =>
+        have h2 : ∀ x, ¬ p x :=
+          fun x =>
+          fun h3 : p x =>
+          have h4 : ∃ x, p x := ⟨x, h3⟩
+          show False from h1 h4
+        show False from h h2)
+end
+
+section
+  open Classical
+
+  variable (α : Type) (p q : α → Prop)
+  variable (r : Prop)
+
+  example : (∃ x : α, r) → r := fun h =>
+    match h with
+    | ⟨_w, hw⟩ => hw
+
+  example (a : α) : r → (∃ x : α, r) := fun (h : r) =>
+  --  ⟨a, h⟩
+    Exists.intro a h
+
+  example : (∃ x, p x ∧ r) ↔ (∃ x, p x) ∧ r := Iff.intro
+    (fun (h : ∃ x, p x ∧ r) =>
+      have h1 : ∃ x, p x := h.elim (fun w hw => ⟨w, hw.left⟩)
+      have h2 : r := h.elim (fun _w hw => hw.right)
+      And.intro h1 h2)
+    (fun (h : (∃ x, p x) ∧ r) =>
+      h.left.elim (fun w hw =>
+        have hr : r := h.right
+        Exists.intro w (And.intro hw hr)))
+
+  example : (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) := Iff.intro
+    (fun (h : ∃ x, p x ∨ q x) =>
+      h.elim (fun w hw =>
+        Or.elim hw
+          (fun hleft => Or.inl (Exists.intro w hleft))
+          (fun hright => Or.inr (Exists.intro w hright))))
+    (fun (h : (∃ x, p x) ∨ (∃ x, q x)) =>
+      Or.elim h
+        (fun hleft => hleft.elim (fun w hw => ⟨w, Or.inl hw⟩))
+        (fun hright => hright.elim (fun w hw => ⟨w, Or.inr hw⟩)))
+
+  example : (∀ x, p x) ↔ ¬ (∃ x, ¬ p x) := Iff.intro
+    (fun (h : (∀ x, p x)) => fun (hex : (∃ x, ¬ p x)) =>
+      hex.elim (fun w hw => absurd (h w) hw))
+    (fun (hneg : ¬ (∃ x, ¬ p x)) => fun x =>
+      byContradiction (fun (hnp : ¬ p x) =>
+        have hex : ∃ x, ¬ p x := ⟨x, hnp⟩
+        absurd hex hneg))
+
+  example : (∃ x, p x) ↔ ¬ (∀ x, ¬ p x) := Iff.intro
+    (fun (hex : ∃ x, p x) => fun (hall : ∀ x, ¬ p x) =>
+      hex.elim (fun w hw => absurd hw (hall w)))
+    (fun (hnotall : ¬ (∀ x, ¬ p x)) =>
+      byContradiction (fun (hnex : ¬ (∃ x, p x)) =>
+        have fpx : (∀ x, ¬ p x) := fun w => fun hw =>
+          show False from hnex (Exists.intro w hw)
+        absurd fpx hnotall))
+
+  example : (¬ ∃ x, p x) ↔ (∀ x, ¬ p x) := Iff.intro
+    (fun (hnex : ¬ ∃ x, p x) => fun x => fun hpx =>
+      show False from (hnex (Exists.intro x hpx)))
+    (fun (hall : ∀ x, ¬ p x) => fun hex =>
+      show False from hex.elim (fun w hw => (hall w hw)))
+
+  example : (¬ ∀ x, p x) ↔ (∃ x, ¬ p x) := Iff.intro
+    (fun (hall : ¬ ∀ x, p x) => byContradiction (fun (hnex : ¬ (∃ x, ¬ p x)) =>
+      have fall : ∀ x, p x := fun x => byContradiction (fun hnpx : ¬ p x =>
+        show False from hnex (Exists.intro x hnpx))
+      hall fall))
+    (fun (hex : ∃ x, ¬ p x) => fun (hall : ∀ x, p x) =>
+      show False from (hex.elim (fun w hw => hw (hall w))))
+
+end
