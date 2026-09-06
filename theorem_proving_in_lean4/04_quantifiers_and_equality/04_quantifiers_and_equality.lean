@@ -350,11 +350,11 @@ section
   variable (α : Type) (p q : α → Prop)
   variable (r : Prop)
 
-  example : (∃ x : α, r) → r := fun h =>
+  example : (∃ _x : α, r) → r := fun h =>
     match h with
     | ⟨_w, hw⟩ => hw
 
-  example (a : α) : r → (∃ x : α, r) := fun (h : r) =>
+  example (a : α) : r → (∃ _x : α, r) := fun (h : r) =>
   --  ⟨a, h⟩
     Exists.intro a h
 
@@ -410,4 +410,70 @@ section
     (fun (hex : ∃ x, ¬ p x) => fun (hall : ∀ x, p x) =>
       show False from (hex.elim (fun w hw => hw (hall w))))
 
+  example : (∀ x, p x → r) ↔ (∃ x, p x) → r := Iff.intro
+    (fun (hall : ∀ x, p x → r) =>
+      (fun (hexists : ∃ x, p x) =>
+        let ⟨x, hx⟩ := hexists
+        hall x hx))
+    (fun (h : (∃ x, p x) → r) =>
+      (fun (x : α) (hx : p x) =>
+        h (Exists.intro x hx)))
+
+  example (a : α) : (∃ x, p x → r) ↔ (∀ x, p x) → r := Iff.intro
+    (fun (hexists : ∃ x, p x → r) =>
+      (fun (hall : ∀ x, p x) =>
+        hexists.elim (fun w hw =>
+          hw (hall w))))
+    (fun (hall_r : (∀ x, p x) → r) =>
+      have f : (∀ x, p x) → (∃ x, p x → r) := (fun (hall : ∀ x, p x) =>
+        Exists.intro a (fun _hpa => (hall_r hall)))
+      have f_not : ¬(∀ x, p x) → (∃ x, p x → r) := (fun (hneg_all : ¬(∀ x, p x)) =>
+        have h₁ : ∃ x, ¬ p x := (not_forall (p := p)).mp hneg_all
+        have h₂ : (∃ x, (¬ p x) ∨ r) := Exists.elim h₁ (fun w hw =>
+            Exists.intro w (Or.inl hw))
+        have h₃ : ∃ x, p x → r := Exists.elim h₂ (fun w hw =>
+            Exists.intro w (fun hpx => Or.elim hw
+              (fun hnpx => absurd hpx hnpx)
+              (fun hr => hr)))
+        show ∃ x, p x → r from h₃)
+
+      byCases (p := (∀ x, p x)) f f_not
+    )
+
+  example (a : α) : (∃ x, r → p x) ↔ (r → ∃ x, p x) := Iff.intro
+    (fun (h : (∃ x, r → p x)) => (fun hr : r =>
+      Exists.elim h (fun w hw => Exists.intro w (hw hr))))
+    (fun (h : (r → ∃ x, p x)) => byContradiction (fun hnot_exists : ¬(∃ x, r → p x) =>
+      have h₁ : ∀ x, ¬(r → p x) := not_exists.mp hnot_exists
+      have h₂ : ¬(r → p a) := h₁ a
+      have h₃ : r ∧ ¬(p a) := not_imp_iff_and_not.mp h₂
+      have h₄ : ∃ x, p x := h h₃.left
+      have h₅ : ∃ x, r → p x := h₄.elim (fun w hw =>
+        Exists.intro w (fun _hr => hw))
+      absurd h₅ hnot_exists))
 end
+
+-- ## 4.5 More on the proof language
+
+variable (f : Nat → Nat)
+variable (h : ∀ x : Nat, f x ≤ f (x + 1))
+
+example : f 0 ≤ f 3 :=
+  have : f 0 ≤ f 1 := h 0
+  have : f 0 ≤ f 2 := Nat.le_trans this (h 1)
+  show f 0 ≤ f 3 from Nat.le_trans this (h 2)
+
+example : f 0 ≤ f 3 :=
+  have : f 0 ≤ f 1 := h 0
+  have : f 0 ≤ f 2 := Nat.le_trans (by assumption) (h 1)
+  -- show f 0 ≤ f 3 from Nat.le_trans (by assumption) (h 2)
+  show f 0 ≤ f 3 from Nat.le_trans ‹f 0 ≤ f 2› (h 2)
+
+example : f 0 ≥ f 1 → f 1 ≥ f 2 → f 0 = f 2 :=
+  fun _ : f 0 ≥ f 1 =>
+  fun _ : f 1 ≥ f 2 =>
+  have : f 0 ≥ f 2 := Nat.le_trans ‹f 1 ≥ f 2› ‹f 0 ≥ f 1›
+  have : f 0 ≤ f 2 := Nat.le_trans (h 0) (h 1)
+  show f 0 = f 2 from Nat.le_antisymm this ‹f 0 ≥ f 2›
+
+example (n : Nat) : Nat := ‹Nat›
