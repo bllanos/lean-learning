@@ -477,3 +477,84 @@ example : f 0 ≥ f 1 → f 1 ≥ f 2 → f 0 = f 2 :=
   show f 0 = f 2 from Nat.le_antisymm this ‹f 0 ≥ f 2›
 
 example (n : Nat) : Nat := ‹Nat›
+
+-- # Exercises
+
+-- ## Exercise 1
+
+section
+  variable (α : Type) (p q : α → Prop)
+
+  example : (∀ x, p x ∧ q x) ↔ (∀ x, p x) ∧ (∀ x, q x) := Iff.intro
+    (fun h : ∀ x, p x ∧ q x => (⟨λ x => (h x).left, λ x => (h x).right⟩ : (∀ x, p x) ∧ (∀ x, q x)))
+    (fun ⟨all_p, all_q⟩ => fun x => ⟨all_p x, all_q x⟩)
+
+  example : (∀ x, p x → q x) → (∀ x, p x) → (∀ x, q x) := fun h : (∀ x, p x → q x) =>
+    fun hp : (∀ x, p x) =>
+      fun x => (h x (hp x))
+
+  example : (∀ x, p x) ∨ (∀ x, q x) → ∀ x, p x ∨ q x := fun hor => Or.elim hor
+    (fun hleft => (λ x => Or.inl (hleft x)))
+    (fun hright => (λ x => Or.inr (hright x)))
+end
+
+-- ## Exercise 2
+
+section
+  variable (α : Type) (p q : α → Prop)
+  variable (r : Prop)
+
+  example : α → ((∀ _x : α, r) ↔ r) := fun (x : α) => Iff.intro
+    (fun hall => (hall x))
+    (fun hr => (fun _x => hr))
+
+  example : (∀ x, p x ∨ r) ↔ (∀ x, p x) ∨ r := Iff.intro
+    (fun hp_or_r : (∀ x, p x ∨ r) => Classical.byCases (p := r)
+      (fun hr : r => Or.inr hr)
+      (fun hnr : ¬r => Or.inl (fun x =>
+        Or.elim (hp_or_r x)
+          (fun hp : p x => hp)
+          (fun hr : r => absurd hr hnr))))
+    (fun hor => (fun x => hor.elim
+      (fun hall => Or.inl (hall x))
+      (fun hr => Or.inr hr)))
+
+  example : (∀ x, r → p x) ↔ (r → ∀ x, p x) := Iff.intro
+    (fun himp : (∀ x, r → p x) => (fun hr x => (himp x hr)))
+    (fun himp : (r → (∀ x, p x)) => (fun x hr => (himp hr x)))
+end
+
+-- ## Exercise 3
+
+section
+  variable (men : Type) (barber : men)
+  variable (shaves : men → men → Prop)
+
+  example (h : ∀ x : men, shaves barber x ↔ ¬ shaves x x) : False :=
+    have hbarber : shaves barber barber ↔ ¬ shaves barber barber := h barber
+    have : ¬ shaves barber barber := fun s => (hbarber.mp s s)
+    absurd (hbarber.mpr this) this
+end
+
+-- ## Exercise 4
+
+def even (n : Nat) : Prop := ∃ k : Nat, k * 2 = n
+def prime (n : Nat) : Prop := ∀ (m k : Nat), m * k = n → (m = 1 ∧ k = n) ∨ (m = n ∧ k = 1)
+def infinitely_many_primes : Prop := ∀ (n : Nat), (∃ k, (prime k) ∧ k > n)
+def Fermat (n : Nat) : Nat := (Nat.pow 2 (Nat.pow 2 n)) + 1
+#eval Fermat 0
+#eval Fermat 1
+#eval Fermat 2
+def Fermat_prime (n : Nat) : Prop := (prime n) ∧ (∃ k, k > 0 ∧ n = (Nat.pow 2 k) + 1) 
+def inifinitely_many_Fermat_primes : Prop := ∀ (n : Nat), (∃ k, k > n ∧ Fermat_prime k)
+def goldbach_conjecture : Prop :=
+  ∀ (n : Nat), ((n > 2) ∧ even n) → ∃ (m k : Nat), ((prime m) ∧ (prime k) ∧ n = m + k)
+def Goldbach's_weak_conjecture : Prop := ∀ (n : Nat),
+  ((n > 5) ∧ ¬ (even n)) →
+  ∃ (m k p : Nat), ((prime m) ∧ (prime k) ∧ (prime p) ∧ n = m + k + p)
+def Fermat's_last_theorem : Prop := ∀ (n : Nat), n > 2 ∧
+  ¬(∃ (k m p : Nat), (Nat.pow k n) + (Nat.pow m n) = (Nat.pow p n))
+
+-- ## Exercise 5
+
+-- See above
