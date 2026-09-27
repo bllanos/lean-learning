@@ -259,3 +259,98 @@ example (p q r : Prop) : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := by
       | intro hp hr =>
         constructor; exact hp; apply Or.inr; exact hr
 
+example (p q : Nat → Prop) : (∃ x, p x) → ∃ x, p x ∨ q x := by
+  intro h
+  cases h with
+  | intro x px => constructor; apply Or.inl; exact px
+
+example (p q : Nat → Prop) : (∃ x, p x) → ∃ x, p x ∨ q x := by
+  intro h
+  cases h with
+  | intro x px => exists x; apply Or.inl; exact px
+
+example (p q : Nat → Prop) : (∃ x, p x ∧ q x) → ∃ x, q x ∧ p x := by
+  intro h
+  cases h with
+  | intro x hpq =>
+    cases hpq with
+    | intro hp hq =>
+      exists x
+
+def swap_pair : α × β → β × α := by
+  intro p
+  cases p
+  constructor <;> assumption
+
+def swap_sum : Sum α β → Sum β α := by
+  intro p
+  cases p with
+  | inl a => apply Sum.inr; assumption
+  | inr b => apply Sum.inl; assumption
+
+section
+  open Nat
+
+  example (P : Nat → Prop)
+      (h₀ : P 0) (h₁ : ∀ n, P (succ n))
+      (m : Nat) : P m := by
+    cases m with
+    | zero => exact h₀
+    | succ m' => exact h₁ m'
+end
+
+example (p q : Prop) : p ∧ ¬ p → q := by
+  intro h
+  cases h
+  contradiction
+
+example (p q r : Prop) : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := by
+  apply Iff.intro
+  · intro h
+    match h with
+    | ⟨_, Or.inl _⟩ =>
+      apply Or.inl; constructor <;> assumption
+    | ⟨_, Or.inr _⟩ =>
+      apply Or.inr; constructor <;> assumption
+  · intro h
+    match h with
+    | Or.inl ⟨hp, hq⟩ =>
+      constructor; exact hp; apply Or.inl; exact hq
+    | Or.inr ⟨hp, hr⟩ =>
+      constructor; exact hp; apply Or.inr; exact hr
+
+example (p q r : Prop) : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := by
+  apply Iff.intro
+  · intro
+    | ⟨hp, Or.inl hq⟩ =>
+      apply Or.inl; constructor <;> assumption
+    | ⟨hp, Or.inr hr⟩ =>
+      apply Or.inr; constructor <;> assumption
+  · intro
+    | Or.inl ⟨hp, hq⟩ =>
+      constructor; assumption; apply Or.inl; assumption
+    | Or.inr ⟨hp, hr⟩ =>
+      constructor; assumption; apply Or.inr; assumption
+
+-- ## 5.4 Structuring tactic proofs
+
+example (p q r : Prop) : p ∧ (q ∨ r) → (p ∧ q) ∨ (p ∧ r) := by
+  intro h
+  exact
+    have hp : p := h.left
+    have hqr : q ∨ r := h.right
+    show (p ∧ q) ∨ (p ∧ r) by
+      cases hqr with
+      | inl hq => exact Or.inl ⟨hp, hq⟩
+      | inr hr => exact Or.inr ⟨hp, hr⟩
+
+example (p q r : Prop) : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := by
+  apply Iff.intro
+  · intro h
+    cases h.right with
+    | inl hq => exact Or.inl ⟨h.left, hq⟩
+    | inr hr => exact Or.inr ⟨h.left, hr⟩
+  · intro h
+    cases h with
+    | inl hpq => exact ⟨hpq.left, Or.inl hpq.right⟩
+    | inr hpr => exact ⟨hpr.left, Or.inr hpr.right⟩
