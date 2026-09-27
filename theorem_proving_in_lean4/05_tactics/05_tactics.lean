@@ -115,3 +115,147 @@ example : ∀ a b c : Nat, a = b → a = c → c = b := by
   apply Eq.symm
   assumption
   assumption
+
+example : ∀ a b c : Nat, a = b → a = c → c = b := by unhygienic
+  intros
+  apply Eq.trans
+  apply Eq.symm
+  exact a_2
+  exact a_1
+
+example: ∀ a b c : Nat, a = b → a = d → a = c → c = b := by
+  intros
+  rename_i h1 _ h2
+  apply Eq.trans
+  apply Eq.symm
+  exact h2
+  exact h1
+
+example (y : Nat) : (fun _x : Nat => 0) y = 0 := by
+  rfl
+
+example : ∀ a b c : Nat, a = b → a = c → c = b := by
+  intros
+  apply Eq.trans
+  apply Eq.symm
+  repeat assumption
+
+example (x : Nat) : x = x := by
+  revert x
+  intro y
+  rfl
+
+example (x y : Nat) (h : x = y) : y = x := by
+  revert h
+  intro h₁
+  apply Eq.symm
+  assumption
+
+example (x y : Nat) (h : x = y) : y = x := by
+  revert x
+  intros
+  apply Eq.symm
+  assumption
+
+example (x y : Nat) (h : x = y) : y = x := by
+  revert x y
+  intros
+  apply Eq.symm
+  assumption
+
+example : 3 = 3 := by
+  generalize 3 = x
+  revert x
+  intro y
+  rfl
+
+-- example : 2 + 3 = 5 := by
+--  generalize 3 = x
+--  sorry
+
+example : 2 + 3 = 5 := by
+  generalize h : 3 = x
+  rw [← h]
+
+-- ## 5.3 More tactics
+
+example (p q : Prop) : p ∨ q → q ∨ p := by
+  intro h
+  cases h with
+  | inl hp => apply Or.inr; exact hp
+  | inr hq => apply Or.inl; exact hq
+
+example (p q : Prop) : p ∨ q → q ∨ p := by
+  intro h
+  cases h with
+  | inr hq => apply Or.inl; exact hq
+  | inl hp => apply Or.inr; exact hp
+
+example (p q : Prop) : p ∨ q → q ∨ p := by
+  intro h
+  cases h
+  apply Or.inr
+  assumption
+  apply Or.inl;
+  assumption
+
+example (p : Prop) : p ∨ p → p := by
+  intro h
+  cases h
+  repeat assumption
+
+example (p : Prop) : p ∨ p → p := by
+  intro h
+  cases h <;> assumption
+
+example (p q : Prop) : p ∨ q → q ∨ p := by
+  intro h
+  cases h
+  · apply Or.inr
+    assumption
+  · apply Or.inl
+    assumption
+
+example (p q : Prop) : p ∨ q → q ∨ p := by
+  intro h
+  cases h
+  case inr h =>
+    apply Or.inl
+    assumption
+  case inl h =>
+    apply Or.inr
+    assumption
+
+example (p q : Prop) : p ∨ q → q ∨ p := by
+  intro h
+  cases h
+  case inr h =>
+    apply Or.inl
+    assumption
+  · apply Or.inr
+    assumption
+
+example (p q : Prop) : p ∧ q → q ∧ p := by
+  intro h
+  cases h with
+  | intro hp hq => constructor; exact hq; exact hp
+
+example (p q r : Prop) : p ∧ (q ∨ r) ↔ (p ∧ q) ∨ (p ∧ r) := by
+  apply Iff.intro
+  · intro h
+    cases h with
+    | intro hp hqr =>
+      cases hqr
+      · apply Or.inl; constructor <;> assumption
+      · apply Or.inr; constructor <;> assumption
+  · intro h
+    cases h with
+    | inl hpq =>
+      cases hpq with
+      | intro hp hq =>
+        constructor; exact hp; apply Or.inl; exact hq
+    | inr hpr =>
+      cases hpr with
+      | intro hp hr =>
+        constructor; exact hp; apply Or.inr; exact hr
+
