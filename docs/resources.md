@@ -18,6 +18,8 @@ We found the following resources helpful. Each one is listed alongside the date 
 
 ### Other Lean resources
 
+1. (2026) [Type Checking in Lean 4](https://ammkrn.github.io/type_checking_in_lean4/), by Chris Bailey and contributors, [commit 2ec9cad](https://github.com/ammkrn/type_checking_in_lean4/commit/2ec9cadf98449a7aa05580e2591c9aa3522ff647), March 21, 2026.
+
 ### Related systems
 
 1. (2025) [Proof-Oriented Programming in F\*](https://fstar-lang.org/tutorial/proof-oriented-programming-in-fstar.pdf), by Nikhil Swamy, Guido Martínez, and Aseem Rastogi, updated May 23, 2025
